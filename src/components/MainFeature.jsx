@@ -91,8 +91,7 @@ const MainFeature = () => {
   
   // Form state
   const [taskForm, setTaskForm] = useState({
-    templateId: '',
-    templateId: '',
+    templateId: '', 
     dueDate: format(new Date(Date.now() + 86400000), 'yyyy-MM-dd'), // Tomorrow as default
     project: '',
     priority: 'Medium',
@@ -197,13 +196,13 @@ const MainFeature = () => {
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
+        [name]: ''
+      }));
+    }
+    
     // Reset template selection if editing fields that would be set by a template
     if (['title', 'description', 'status', 'priority', 'tags'].includes(name) && taskForm.templateId) {
       setTaskForm(prev => ({ ...prev, templateId: '' }));
-    }
-    
-        [name]: ''
-      }));
     }
   };
   
