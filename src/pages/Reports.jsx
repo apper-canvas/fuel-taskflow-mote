@@ -363,34 +363,12 @@ const Reports = () => {
   // Export data as CSV
   const exportCSV = () => {
     const filteredEntries = getFilteredTimeEntries();
+    const fileName = `time-report-${startDate}-to-${endDate}.csv`;
     
-    const csvData = filteredEntries.map(entry => ({
-      'Date': format(new Date(entry.startTime), 'yyyy-MM-dd'),
-      'Start Time': format(new Date(entry.startTime), 'HH:mm'),
-      'End Time': format(new Date(entry.endTime), 'HH:mm'),
-      'Duration (h)': (entry.duration / 3600).toFixed(2),
-      'Task': entry.taskTitle,
-      'Project': entry.project,
-      'Assignee': entry.assignee,
-      'Description': entry.description || ''
-    }));
-    
-    if (csvData.length === 0) {
-      csvData.push({
-        'Date': '',
-        'Start Time': '',
-        'End Time': '',
-        'Duration (h)': '',
-        'Task': '',
-        'Project': '',
-        'Assignee': '',
-        'Description': 'No data found for the selected filters'
-      });
-    }
-    
-    const csv = Papa.unparse(csvData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    saveAs(blob, `time-report-${startDate}-to-${endDate}.csv`);
+    // Import the exported utility function from reportingUtils instead
+    import('../utils/reportingUtils').then(module => {
+      module.exportToCSV(filteredEntries, fileName);
+    });
   };
 
   return (

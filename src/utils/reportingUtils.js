@@ -1,5 +1,6 @@
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import Papa from 'papaparse';
+import { saveAs } from 'file-saver';
 
 /**
  * Filter time entries based on date range, project, and user
@@ -102,11 +103,8 @@ export const prepareCSVData = (entries) => {
   return entries.map(entry => ({
     'Date': format(new Date(entry.startTime), 'yyyy-MM-dd'),
     'Start Time': format(new Date(entry.startTime), 'HH:mm'),
-  // Convert data to CSV format using PapaParse
-  const csv = Papa.unparse(data, {
-    header: true
-  });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    'End Time': format(new Date(entry.endTime), 'HH:mm'),
+    'Duration (h)': (entry.duration / 3600).toFixed(2),
     'Task': entry.taskTitle,
     'Project': entry.project,
     'Assignee': entry.assignee,
@@ -115,4 +113,27 @@ export const prepareCSVData = (entries) => {
   }));
 };
 
-export default { filterTimeEntries, calculateTotalTime, aggregateTimeBy, prepareCSVData };
+/**
+ * Export data to CSV file
+ * @param {Array} entries - Time entries
+ * @param {String} filename - Name of the file to download
+ * @returns {void}
+ */
+export const exportToCSV = (entries, filename = 'time-report.csv') => {
+  const csvData = prepareCSVData(entries);
+  
+  // Handle empty data case
+  if (csvData.length === 0) {
+    csvData.push({
+      'Date': '', 'Start Time': '', 'End Time': '', 'Duration (h)': '',
+      'Task': '', 'Project': '', 'Assignee': '', 'Status': '',
+      'Description': 'No data found for the selected filters'
+    });
+  }
+  
+  const csv = Papa.unparse(csvData);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  saveAs(blob, filename);
+};
+
+export default { filterTimeEntries, calculateTotalTime, aggregateTimeBy, prepareCSVData, exportToCSV };
