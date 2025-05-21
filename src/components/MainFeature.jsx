@@ -4,7 +4,8 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { getIcon } from '../utils/iconUtils';
 import { useSelector, useDispatch } from 'react-redux';
-import { formatDuration } from '../utils/timeUtils';
+import { selectAllTemplates } from '../store/templatesSlice';
+import { formatDuration } from '../utils/timeUtils'; 
 import TimeTracker from './TimeTracker';
 import { stopTimer } from '../store';
 
@@ -18,6 +19,7 @@ const AlertCircleIcon = getIcon('alert-circle');
 const ClockIcon = getIcon('clock');
 const TimerIcon = getIcon('timer');
 const FlagIcon = getIcon('flag');
+const BookmarkIcon = getIcon('bookmark');
 const TagIcon = getIcon('tag');
 
 // Initial task status options
@@ -84,13 +86,16 @@ const MainFeature = () => {
   const [showTimeEntryForm, setShowTimeEntryForm] = useState(false);
   const [selectedTaskForTimeEntry, setSelectedTaskForTimeEntry] = useState(null);
   const activeTimer = useSelector((state) => state.timer.activeTimer);
+  const templates = useSelector(selectAllTemplates);
   const dispatch = useDispatch();
   
   // Form state
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
+    templateId: '',
     dueDate: format(new Date(Date.now() + 86400000), 'yyyy-MM-dd'), // Tomorrow as default
+    project: '',
     priority: 'Medium',
     status: 'To Do',
     tags: ''
@@ -138,6 +143,11 @@ const MainFeature = () => {
       if (sortOption === 'dueDate') {
         return new Date(a.dueDate) - new Date(b.dueDate);
       } else if (sortOption === 'priority') {
+      // Handle empty array
+      if (filtered.length === 0) {
+        return [];
+      }
+      
         const priorityOrder = { 'Urgent': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
       } else if (sortOption === 'status') {
@@ -153,13 +163,46 @@ const MainFeature = () => {
     const { name, value } = e.target;
     setTaskForm(prev => ({
       ...prev,
-      [name]: value
+  const handleInputChange = (e) => {
     }));
+    
+    // Special handling for template selection
+    if (name === 'templateId' && value) {
+      const selectedTemplate = templates.find(t => t.id === parseInt(value));
+      
+      if (selectedTemplate) {
+        // Pre-populate form with template data
+        setTaskForm(prev => ({
+          ...prev,
+          templateId: value,
+          title: selectedTemplate.title,
+          description: selectedTemplate.description,
+          priority: selectedTemplate.priority,
+          status: selectedTemplate.status,
+          tags: selectedTemplate.tags.join(', '),
+          project: selectedTemplate.project || prev.project
+        }));
+        
+        // Clear form errors
+        setFormErrors({});
+        
+        // Notify user
+        toast.info(`Template "${selectedTemplate.title}" applied`);
+        return;
+      }
+    }
+    
+    // Regular form field handling
     
     // Clear error for this field when user types
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
+    // Reset template selection if editing fields that would be set by a template
+    if (['title', 'description', 'status', 'priority', 'tags'].includes(name) && taskForm.templateId) {
+      setTaskForm(prev => ({ ...prev, templateId: '' }));
+    }
+    
         [name]: ''
       }));
     }
@@ -204,6 +247,7 @@ const MainFeature = () => {
             ? {
                 ...task,
                 title: taskForm.title,
+                project: taskForm.project || task.project,
                 description: taskForm.description,
                 dueDate: new Date(taskForm.dueDate),
                 priority: taskForm.priority,
@@ -218,8 +262,9 @@ const MainFeature = () => {
     } else {
       // Create new task
       const newTask = {
-        id: Date.now(), // Simple ID generation
+        id: Date.now(),
         title: taskForm.title,
+        project: taskForm.project || '',
         description: taskForm.description,
         dueDate: new Date(taskForm.dueDate),
         priority: taskForm.priority,
@@ -239,8 +284,10 @@ const MainFeature = () => {
   // Reset form to defaults
   const resetForm = () => {
     setTaskForm({
+      templateId: '',
       title: '',
       description: '',
+      project: '',
       dueDate: format(new Date(Date.now() + 86400000), 'yyyy-MM-dd'), // Tomorrow
       priority: 'Medium',
       status: 'To Do',
@@ -440,6 +487,26 @@ const MainFeature = () => {
                 {editingTask ? "Edit Task" : "Create New Task"}
               </h4>
               
+              {/* Template selector (only show when creating a new task) */}
+              {!editingTask && (
+                <div className="mb-4">
+                  <label htmlFor="templateId" className="mb-1 block text-sm font-medium">
+                    Use Template
+                  </label>
+                  <select
+                    id="templateId"
+                    name="templateId"
+                    value={taskForm.templateId}
+                    onChange={handleInputChange}
+                    className="input w-full"
+                  >
+                    <option value="">Select a template (optional)</option>
+                    {templates.map(template => (
+                      <option key={template.id} value={template.id}>{template.title}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="mb-4 grid gap-4 md:grid-cols-2">
                 {/* Title */}
                 <div className="col-span-full">
@@ -460,6 +527,19 @@ const MainFeature = () => {
                   )}
                 </div>
                 
+                {/* Project */}
+                <div>
+                  <label htmlFor="project" className="mb-1 block text-sm font-medium">
+                    Project
+                  </label>
+                  <input
+                    type="text"
+                    id="project"
+                    name="project"
+                    value={taskForm.project}
+                    onChange={handleInputChange}
+                    className="input w-full" />
+                </div>
                 {/* Description */}
                 <div className="col-span-full">
                   <label htmlFor="description" className="mb-1 block text-sm font-medium">

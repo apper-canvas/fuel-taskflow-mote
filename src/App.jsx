@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, BarChart3, Home } from 'lucide-react';
+import { Sun, Moon, BarChart3, Home, Bookmark } from 'lucide-react';
 
 // Pages
 import HomePage from './pages/Home';
 import NotFound from './pages/NotFound';
 import Reports from './pages/Reports';
-import { useLocation } from 'react-router-dom';
+import Templates from './pages/Templates';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -19,7 +19,7 @@ function App() {
     }
     return false;
   });
-  const location = useLocation();
+  const { pathname } = useLocation();
 
   // Apply dark mode class to html element
   useEffect(() => {
@@ -46,17 +46,26 @@ function App() {
           <div className="flex items-center space-x-2">
             <Link 
               to="/" 
-              className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
+              className={`flex items-center rounded-md px-3 py-2 text-sm ${pathname === '/' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
             >
               <Home className="mr-2 h-4 w-4" />
               Tasks
             </Link>
             <Link
               to="/reports" 
-              className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/reports' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
+              className={`flex items-center rounded-md px-3 py-2 text-sm ${pathname === '/reports' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
             >
               <BarChart3 className="mr-2 h-4 w-4" />
               Reports
+            </Link>
+            <Link
+              to="/templates" 
+              className={`flex items-center rounded-md px-3 py-2 text-sm ${
+                pathname === '/templates' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'
+              }`}
+            >
+              <Bookmark className="mr-2 h-4 w-4" />
+              Templates
             </Link>
           </div>
         </div>
@@ -76,6 +85,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/templates" element={<Templates />} />
           <Route path="*" element={<NotFound />} />  
         </Routes>
       </AnimatePresence>
