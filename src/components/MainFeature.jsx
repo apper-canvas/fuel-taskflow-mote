@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { getIcon } from '../utils/iconUtils';
+import { useSelector, useDispatch } from 'react-redux';
+import { formatDuration } from '../utils/timeUtils';
+import TimeTracker from './TimeTracker';
+import { stopTimer } from '../store';
 
 // Icons
 const PlusIcon = getIcon('plus');
@@ -12,6 +16,7 @@ const CheckIcon = getIcon('check');
 const XIcon = getIcon('x');
 const AlertCircleIcon = getIcon('alert-circle');
 const ClockIcon = getIcon('clock');
+const TimerIcon = getIcon('timer');
 const FlagIcon = getIcon('flag');
 const TagIcon = getIcon('tag');
 
@@ -44,7 +49,8 @@ const initialTasks = [
     dueDate: new Date(Date.now() + 86400000 * 3), // 3 days from now
     priority: 'High',
     status: 'In Progress',
-    tags: ['Design', 'UI/UX']
+    tags: ['Design', 'UI/UX'],
+    timeEntries: []
   },
   {
     id: 2,
@@ -53,7 +59,8 @@ const initialTasks = [
     dueDate: new Date(Date.now() + 86400000), // 1 day from now
     priority: 'Urgent',
     status: 'To Do',
-    tags: ['Bug', 'Frontend']
+    tags: ['Bug', 'Frontend'],
+    timeEntries: []
   },
   {
     id: 3,
@@ -62,7 +69,8 @@ const initialTasks = [
     dueDate: new Date(Date.now() + 86400000 * 2), // 2 days from now
     priority: 'Medium',
     status: 'To Do',
-    tags: ['Meeting', 'Planning']
+    tags: ['Meeting', 'Planning'],
+    timeEntries: []
   }
 ];
 
@@ -73,6 +81,10 @@ const MainFeature = () => {
   const [filteredStatus, setFilteredStatus] = useState('All');
   const [sortOption, setSortOption] = useState('dueDate');
   const [editingTask, setEditingTask] = useState(null);
+  const [showTimeEntryForm, setShowTimeEntryForm] = useState(false);
+  const [selectedTaskForTimeEntry, setSelectedTaskForTimeEntry] = useState(null);
+  const activeTimer = useSelector((state) => state.timer.activeTimer);
+  const dispatch = useDispatch();
   
   // Form state
   const [taskForm, setTaskForm] = useState({
@@ -82,6 +94,13 @@ const MainFeature = () => {
     priority: 'Medium',
     status: 'To Do',
     tags: ''
+  });
+
+  // Time entry form state
+  const [timeEntryForm, setTimeEntryForm] = useState({
+    hours: '0',
+    minutes: '0',
+    description: ''
   });
   
   // Form validation errors
@@ -189,7 +208,8 @@ const MainFeature = () => {
                 dueDate: new Date(taskForm.dueDate),
                 priority: taskForm.priority,
                 status: taskForm.status,
-                tags: tagArray
+                tags: tagArray,
+                timeEntries: task.timeEntries || []
               }
             : task
         )
@@ -204,7 +224,8 @@ const MainFeature = () => {
         dueDate: new Date(taskForm.dueDate),
         priority: taskForm.priority,
         status: taskForm.status,
-        tags: tagArray
+        tags: tagArray,
+        timeEntries: []
       };
       
       setTasks(prev => [...prev, newTask]);
@@ -230,6 +251,35 @@ const MainFeature = () => {
     setFormErrors({});
   };
   
+  // Handle time entry form input changes
+  const handleTimeEntryInputChange = (e) => {
+    const { name, value } = e.target;
+    setTimeEntryForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Add time entry manually
+  const handleAddTimeEntry = (e) => {
+    e.preventDefault();
+    
+    const hours = parseInt(timeEntryForm.hours) || 0;
+    const minutes = parseInt(timeEntryForm.minutes) || 0;
+    const totalSeconds = (hours * 60 * 60) + (minutes * 60);
+    
+    if (totalSeconds <= 0) {
+      toast.error("Please enter a valid time duration");
+      return;
+    }
+    
+    addTimeEntryToTask(selectedTaskForTimeEntry, totalSeconds, timeEntryForm.description);
+    setTimeEntryForm({ hours: '0', minutes: '0', description: '' });
+    setShowTimeEntryForm(false);
+    setSelectedTaskForTimeEntry(null);
+    toast.success("Time entry added successfully!");
+  };
+  
   // Delete a task
   const handleDeleteTask = (taskId) => {
     setTasks(prev => prev.filter(task => task.id !== taskId));
@@ -251,6 +301,50 @@ const MainFeature = () => {
   // Edit a task
   const handleEditTask = (taskId) => {
     setEditingTask(taskId);
+  };
+
+  // Handle time entry completed from timer
+  const handleTimeEntryCompleted = (taskId, seconds, startTime, endTime) => {
+    addTimeEntryToTask(taskId, seconds, '', startTime, endTime);
+    toast.success("Time tracked successfully!");
+  };
+
+  // Add a time entry to a task
+  const addTimeEntryToTask = (taskId, seconds, description = '', manualStartTime = null, manualEndTime = null) => {
+    const now = new Date();
+    const startTime = manualStartTime || new Date(now.getTime() - (seconds * 1000));
+    const endTime = manualEndTime || now;
+    
+    const newTimeEntry = {
+      id: Date.now(),
+      startTime,
+      endTime,
+      duration: seconds,
+      description: description.trim()
+    };
+    
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { 
+            ...task, 
+            timeEntries: [...(task.timeEntries || []), newTimeEntry]
+          }
+        : task
+    ));
+  };
+
+  // Calculate total time spent on a task
+  const getTotalTimeForTask = (taskTimeEntries) => {
+    if (!taskTimeEntries || taskTimeEntries.length === 0) return 0;
+    return taskTimeEntries.reduce((total, entry) => total + entry.duration, 0);
+  };
+
+  // Delete a time entry
+  const handleDeleteTimeEntry = (taskId, entryId) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId ? { ...task, timeEntries: task.timeEntries.filter(entry => entry.id !== entryId) } : task
+    ));
+    toast.success("Time entry deleted");
   };
   
   // Calculate due date label and style
@@ -490,6 +584,7 @@ const MainFeature = () => {
         ) : (
           getFilteredTasks().map(task => {
             const dueDateInfo = getDueDateInfo(task.dueDate);
+            const totalTime = getTotalTimeForTask(task.timeEntries);
             
             return (
               <motion.div
@@ -547,10 +642,82 @@ const MainFeature = () => {
                 )}
                 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  {/* Due Date */}
+                  <div className="flex items-center gap-4">
+                    {/* Due Date */}
+                    <div className={`flex items-center text-xs ${dueDateInfo.className}`}>
+                      <ClockIcon className="mr-1 h-3 w-3" />
+                      <span>{dueDateInfo.label}</span>
+                    </div>
+                    
+                    {/* Time Tracking Summary */}
+                    <button 
+                      onClick={() => {
+                        // Toggle time entries visibility
+                        const element = document.getElementById(`time-entries-${task.id}`);
+                        if (element) {
+                          element.classList.toggle('hidden');
+                        }
+                      }}
+                      className="flex items-center text-xs text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-primary"
+                    >
+                      <TimerIcon className="mr-1 h-3 w-3" />
+                      <span>{formatDuration(totalTime)} logged</span>
+                    </button>
+                  </div>
+                  
+                  {/* Action buttons */}
+                  <div className="flex items-center space-x-1">
+                    {/* Time tracking controls */}
+                    <TimeTracker 
+                      taskId={task.id} 
+                      onTimeEntryCompleted={handleTimeEntryCompleted}
+                      isActive={activeTimer && activeTimer.taskId === task.id}
+                    />
+                    
+                    {/* Manual time entry button */}
+                    <button
+                      onClick={() => {
+                        setSelectedTaskForTimeEntry(task.id);
+                        setShowTimeEntryForm(true);
+                      }}
+                      className="rounded-md bg-primary-light p-1.5 text-primary-dark hover:bg-primary/20 dark:bg-primary-dark/30 dark:text-primary-light dark:hover:bg-primary-dark/50"
+                      title="Log time manually"
+                    >
+                      <ClockIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Time Entries List (Hidden by default) */}
+                <div id={`time-entries-${task.id}`} className="mt-3 hidden rounded-md border border-surface-200 p-2 dark:border-surface-700">
+                  <h5 className="mb-2 text-xs font-medium">Time Entries</h5>
+                  {task.timeEntries && task.timeEntries.length > 0 ? (
+                    <div className="max-h-40 overflow-y-auto">
+                      {task.timeEntries.map((entry) => (
+                        <div key={entry.id} className="mb-1 flex items-center justify-between border-b border-surface-100 pb-1 text-xs dark:border-surface-700">
+                          <div>
+                            <div>{format(new Date(entry.startTime), 'MMM d, h:mm a')} - {format(new Date(entry.endTime), 'h:mm a')}</div>
+                            <div className="text-surface-500 dark:text-surface-400">
+                              {formatDuration(entry.duration)}
+                              {entry.description && ` • ${entry.description}`}
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => handleDeleteTimeEntry(task.id, entry.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-surface-500">No time entries yet</p>
+                  )}
+                </div>
+                
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   <div className={`flex items-center text-xs ${dueDateInfo.className}`}>
-                    <ClockIcon className="mr-1 h-3 w-3" />
-                    <span>{dueDateInfo.label}</span>
                   </div>
                   
                   {/* Action buttons */}
@@ -590,6 +757,86 @@ const MainFeature = () => {
           })
         )}
       </div>
+      
+      {/* Manual Time Entry Form Modal */}
+      <AnimatePresence>
+        {showTimeEntryForm && selectedTaskForTimeEntry && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-surface-800"
+            >
+              <h3 className="mb-4 text-lg font-medium">Log Time Manually</h3>
+              <form onSubmit={handleAddTimeEntry}>
+                <div className="mb-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="hours" className="mb-1 block text-sm font-medium">Hours</label>
+                    <input
+                      type="number"
+                      id="hours"
+                      name="hours"
+                      min="0"
+                      value={timeEntryForm.hours}
+                      onChange={handleTimeEntryInputChange}
+                      className="input w-full"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="minutes" className="mb-1 block text-sm font-medium">Minutes</label>
+                    <input
+                      type="number"
+                      id="minutes"
+                      name="minutes"
+                      min="0"
+                      max="59"
+                      value={timeEntryForm.minutes}
+                      onChange={handleTimeEntryInputChange}
+                      className="input w-full"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label htmlFor="description" className="mb-1 block text-sm font-medium">Description (optional)</label>
+                    <input
+                      type="text"
+                      id="description"
+                      name="description"
+                      value={timeEntryForm.description}
+                      onChange={handleTimeEntryInputChange}
+                      className="input w-full"
+                      placeholder="What did you work on?"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTimeEntryForm(false);
+                      setSelectedTaskForTimeEntry(null);
+                    }}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                  >
+                    Add Time Entry
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
