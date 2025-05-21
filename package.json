@@ -11,10 +11,12 @@
   "dependencies": {
     "@reduxjs/toolkit": "2.7.0",
     "apexcharts": "^4.5.0",
+    "csv-string": "^4.1.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.10",
+    "file-saver": "^2.0.5",
     "framer-motion": "^10.16.4",
-    "lucide-react": "^0.299.0",
+    "lucide-react": "^0.300.0",
     "react": "^18.2.0",
     "react-apexcharts": "^1.7.0",
     "react-dom": "^18.2.0",

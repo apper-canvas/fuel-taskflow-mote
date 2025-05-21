@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, BarChart3, Home } from 'lucide-react';
 
 // Pages
-import Home from './pages/Home';
+import HomePage from './pages/Home';
 import NotFound from './pages/NotFound';
+import Reports from './pages/Reports';
+import { useLocation } from 'react-router-dom';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -17,6 +19,7 @@ function App() {
     }
     return false;
   });
+  const location = useLocation();
 
   // Apply dark mode class to html element
   useEffect(() => {
@@ -36,6 +39,28 @@ function App() {
 
   return (
     <div className="min-h-screen bg-surface-50 text-surface-900 transition-colors duration-300 dark:bg-surface-900 dark:text-surface-50">
+      {/* Navigation */}
+      <nav className="fixed top-0 z-40 flex w-full items-center justify-between bg-white px-4 py-3 shadow-sm dark:bg-surface-800">
+        <div className="flex items-center space-x-6">
+          <h1 className="text-xl font-bold text-primary">TaskFlow</h1>
+          <div className="flex items-center space-x-2">
+            <Link 
+              to="/" 
+              className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Tasks
+            </Link>
+            <Link 
+              to="/reports" 
+              className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/reports' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
+            >
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Reports
+            </Link>
+          </div>
+        </div>
+      </nav>
       {/* Theme Toggle Button */}
       <motion.button
         onClick={toggleDarkMode}
@@ -49,8 +74,9 @@ function App() {
 
       <AnimatePresence mode="wait">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="*" element={<NotFound />} />  
         </Routes>
       </AnimatePresence>
 

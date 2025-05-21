@@ -4,16 +4,17 @@ import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils';
 import MainFeature from '../components/MainFeature';
 
+
 // Icons
 const CheckCircleIcon = getIcon('check-circle');
 const UsersIcon = getIcon('users');
 const BarChartIcon = getIcon('bar-chart-2');
 const LayoutIcon = getIcon('layout-dashboard');
 
-const Home = () => {
-  const [showWelcome, setShowWelcome] = useState(true);
-
-  // Hide welcome message after 5 seconds
+      <div className="mx-auto max-w-7xl px-4 py-8 pt-16 sm:px-6 sm:py-12 sm:pt-20 lg:px-8">
+        <div className="mb-8 mt-4 text-center">
+          <h1 className="mb-4 font-heading text-3xl font-bold tracking-tight sm:text-4xl">Task Management</h1>
+          <p className="mx-auto max-w-3xl text-base text-surface-600 dark:text-surface-400">
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowWelcome(false);
