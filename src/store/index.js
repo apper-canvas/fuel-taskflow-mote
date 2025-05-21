@@ -1,9 +1,11 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import templatesReducer from './templatesSlice';
+import templatesReducer from './templatesSlice';
 
 // Time tracking slice
 const timerSlice = createSlice({
   name: 'timer',
+    templates: templatesReducer,
   initialState: {
     activeTimer: null,
     history: []
