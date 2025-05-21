@@ -9,8 +9,6 @@ import HomePage from './pages/Home';
 import NotFound from './pages/NotFound';
 import Reports from './pages/Reports';
 import { useLocation } from 'react-router-dom';
-import Reports from './pages/Reports';
-import { useLocation } from 'react-router-dom';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -21,7 +19,6 @@ function App() {
     }
     return false;
   });
-  const location = useLocation();
   const location = useLocation();
 
   // Apply dark mode class to html element
@@ -51,20 +48,10 @@ function App() {
               to="/" 
               className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
             >
-              to="/" 
-              className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
-            >
-            <Link 
-              to="/reports" 
-              className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/reports' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
-            >
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Reports
-            </Link>
               <Home className="mr-2 h-4 w-4" />
               Tasks
             </Link>
-            <Link 
+            <Link
               to="/reports" 
               className={`flex items-center rounded-md px-3 py-2 text-sm ${location.pathname === '/reports' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
             >
@@ -88,7 +75,6 @@ function App() {
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/reports" element={<Reports />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<NotFound />} />  
         </Routes>
