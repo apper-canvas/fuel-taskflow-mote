@@ -1,15 +1,14 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import templatesReducer from './templatesSlice';
-import templatesReducer from './templatesSlice';
 
 // Time tracking slice
 const timerSlice = createSlice({
   name: 'timer',
-    templates: templatesReducer,
   initialState: {
     activeTimer: null,
     history: []
   },
+  
   reducers: {
     startTimer: (state, action) => {
       const { taskId } = action.payload;
@@ -44,8 +43,6 @@ const timerSlice = createSlice({
       if (state.activeTimer && !state.activeTimer.isRunning) {
         // Calculate the time that has passed since pause
         const pauseDuration = new Date() - new Date(state.activeTimer.pausedAt);
-    timer: timerSlice.reducer,
-    templates: templatesReducer
         delete state.activeTimer.pausedAt;
       }
     },
@@ -63,7 +60,8 @@ export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.act
 // Configure the Redux store
 export const store = configureStore({
   reducer: {
-    timer: timerSlice.reducer
+    timer: timerSlice.reducer,
+    templates: templatesReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -5,8 +5,6 @@ import { format } from 'date-fns';
 import { getIcon } from '../utils/iconUtils';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllTemplates } from '../store/templatesSlice';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectAllTemplates } from '../store/templatesSlice';
 import { formatDuration } from '../utils/timeUtils'; 
 import TimeTracker from './TimeTracker';
 import { stopTimer } from '../store';
@@ -21,7 +19,6 @@ const AlertCircleIcon = getIcon('alert-circle');
 const ClockIcon = getIcon('clock');
 const TimerIcon = getIcon('timer');
 const FlagIcon = getIcon('flag');
-const BookmarkIcon = getIcon('bookmark');
 const BookmarkIcon = getIcon('bookmark');
 const TagIcon = getIcon('tag');
 
@@ -97,7 +94,6 @@ const MainFeature = () => {
   // Form state
   const [taskForm, setTaskForm] = useState({
     templateId: '',
-    description: '',
     templateId: '',
     dueDate: format(new Date(Date.now() + 86400000), 'yyyy-MM-dd'), // Tomorrow as default
     project: '',
@@ -199,13 +195,6 @@ const MainFeature = () => {
     
     // Regular form field handling
     
-    }));
-    if (['title', 'description', 'status', 'priority', 'tags'].includes(name) && taskForm.templateId) {
-      setTaskForm(prev => ({ ...prev, templateId: '' }));
-    }
-    
-    
-    // Special handling for template selection
     if (name === 'templateId' && value) {
       const selectedTemplate = templates.find(t => t.id === parseInt(value));
       
@@ -323,7 +312,6 @@ const MainFeature = () => {
   // Reset form to defaults
   const resetForm = () => {
     setTaskForm({
-      templateId: '',
       templateId: '',
       title: '',
       description: '',
@@ -548,26 +536,6 @@ const MainFeature = () => {
                 </div>
               )}
               
-              {/* Template selector (only show when creating a new task) */}
-              {!editingTask && (
-                <div className="mb-4">
-                  <label htmlFor="templateId" className="mb-1 block text-sm font-medium">
-                    Use Template
-                  </label>
-                  <select
-                    id="templateId"
-                    name="templateId"
-                    value={taskForm.templateId}
-                    onChange={handleInputChange}
-                    className="input w-full"
-                  >
-                    <option value="">Select a template (optional)</option>
-                    {templates.map(template => (
-                      <option key={template.id} value={template.id}>{template.title}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
               <div className="mb-4 grid gap-4 md:grid-cols-2">
                 {/* Title */}
                 <div className="col-span-full">
