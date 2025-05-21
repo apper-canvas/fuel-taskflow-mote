@@ -4,7 +4,7 @@ import { format, subDays, startOfWeek, endOfWeek, isWithinInterval, parseISO, st
 import { formatDuration } from '../utils/timeUtils';
 import ReactApexChart from 'react-apexcharts';
 import { Download, Calendar, BarChart2, PieChart, TrendingUp, Filter, X, FileText, Users } from 'lucide-react';
-import { CSV } from 'csv-string';
+import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 
 // Sample data (this would come from a real data source in a production app)
@@ -388,7 +388,7 @@ const Reports = () => {
       });
     }
     
-    const csv = CSV.stringify([Object.keys(csvData[0]), ...csvData.map(Object.values)]);
+    const csv = Papa.unparse(csvData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     saveAs(blob, `time-report-${startDate}-to-${endDate}.csv`);
   };
