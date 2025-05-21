@@ -88,8 +88,6 @@ const MainFeature = () => {
   const activeTimer = useSelector((state) => state.timer.activeTimer);
   const templates = useSelector(selectAllTemplates);
   const dispatch = useDispatch();
-  const templates = useSelector(selectAllTemplates);
-  const dispatch = useDispatch();
   
   // Form state
   const [taskForm, setTaskForm] = useState({
@@ -168,33 +166,6 @@ const MainFeature = () => {
     }));
     
     // Special handling for template selection
-    if (name === 'templateId' && value) {
-      const selectedTemplate = templates.find(t => t.id === parseInt(value));
-      
-      if (selectedTemplate) {
-        // Pre-populate form with template data
-        setTaskForm(prev => ({
-          ...prev,
-          templateId: value,
-          title: selectedTemplate.title,
-          description: selectedTemplate.description,
-          priority: selectedTemplate.priority,
-          status: selectedTemplate.status,
-          tags: selectedTemplate.tags.join(', '),
-          project: selectedTemplate.project || prev.project
-        }));
-        
-        // Clear form errors
-        setFormErrors({});
-        
-        // Notify user
-        toast.info(`Template "${selectedTemplate.title}" applied`);
-        return;
-      }
-    }
-    
-    // Regular form field handling
-    
     if (name === 'templateId' && value) {
       const selectedTemplate = templates.find(t => t.id === parseInt(value));
       
