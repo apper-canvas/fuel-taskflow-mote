@@ -1,5 +1,5 @@
 import { format, isWithinInterval, parseISO } from 'date-fns';
-import { formatDuration } from './timeUtils';
+import Papa from 'papaparse';
 
 /**
  * Filter time entries based on date range, project, and user
@@ -102,9 +102,11 @@ export const prepareCSVData = (entries) => {
   return entries.map(entry => ({
     'Date': format(new Date(entry.startTime), 'yyyy-MM-dd'),
     'Start Time': format(new Date(entry.startTime), 'HH:mm'),
-    'End Time': format(new Date(entry.endTime), 'HH:mm'),
-    'Duration': formatDuration(entry.duration),
-    'Duration (hours)': (entry.duration / 3600).toFixed(2),
+  // Convert data to CSV format using PapaParse
+  const csv = Papa.unparse(data, {
+    header: true
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     'Task': entry.taskTitle,
     'Project': entry.project,
     'Assignee': entry.assignee,
