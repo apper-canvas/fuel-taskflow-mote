@@ -73,6 +73,12 @@
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     @apply dark:border-surface-700 dark:bg-surface-800;
   }
+
+  .tag-badge {
+    @apply flex items-center rounded-full bg-surface-100 px-2 py-1 text-xs text-surface-700;
+    @apply dark:bg-surface-700 dark:text-surface-300;
+    @apply hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors;
+  }
 }
 
 @layer utilities {

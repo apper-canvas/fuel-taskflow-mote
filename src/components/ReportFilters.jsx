@@ -15,6 +15,7 @@ const TIME_RANGES = {
 
 const ReportFilters = ({ 
   projects = [], 
+  filteredTag, setFilteredTag,
   users = [], 
   onFilterChange, 
   initialFilters = {}
@@ -27,6 +28,17 @@ const ReportFilters = ({
   const [selectedUser, setSelectedUser] = useState(initialFilters.user || 'All Users');
   
   // Update date range when the range type changes
+  // Get unique tags for filter
+  const getAllTags = () => {
+    const allTags = new Set();
+    tasks.forEach(task => {
+      if (task.tags && task.tags.length) {
+        task.tags.forEach(tag => allTags.add(tag));
+      }
+    });
+    return Array.from(allTags).sort();
+  };
+  
   useEffect(() => {
     const now = new Date();
     
@@ -104,3 +116,22 @@ const ReportFilters = ({
 };
 
 export default ReportFilters;
+          {/* Tag Filter */}
+          {filteredTag !== undefined && setFilteredTag !== undefined && (
+            <div className="flex items-center space-x-2">
+              <label htmlFor="tagFilter" className="text-sm font-medium text-surface-600 dark:text-surface-300">
+                Tag:
+              </label>
+              <select
+                id="tagFilter"
+                value={filteredTag}
+                onChange={(e) => setFilteredTag(e.target.value)}
+                className="rounded-md border border-surface-200 bg-white py-1 pl-3 pr-8 text-sm focus:ring-2 focus:ring-primary dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300"
+              >
+                <option value="All Tags">All Tags</option>
+                {getAllTags().map(tag => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+            </div>
+          )}

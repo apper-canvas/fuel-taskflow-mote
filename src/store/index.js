@@ -109,6 +109,7 @@ const tasksSlice = createSlice({
         };
       }
     },
+        tags: action.payload.tags || [],
     
     // Delete a task
     deleteTask: (state, action) => {
@@ -127,6 +128,7 @@ const tasksSlice = createSlice({
     
     // Add time entry to a task
     addTimeEntry: (state, action) => {
+          taskToUpdate.tags = action.payload.tags || [];
       const { taskId, timeEntry } = action.payload;
       const taskIndex = state.findIndex(task => task.id === taskId);
       

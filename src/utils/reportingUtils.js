@@ -40,6 +40,13 @@ export const filterTimeEntries = (tasks, filters) => {
           taskTitle: task.title,
           project: task.project,
           assignee: task.assignee,
+        tags: task.tags 
+          ? task.tags.join(', ') 
+          : '',
+        priority: task.priority,
+        status: task.status,
+        dueDate: task.dueDate 
+          ? new Date(task.dueDate).toLocaleDateString() : '',
           status: task.status
         }));
     });
@@ -53,6 +60,9 @@ export const filterTimeEntries = (tasks, filters) => {
 export const calculateTotalTime = (entries) => {
   return entries.reduce((total, entry) => total + entry.duration, 0);
 };
+    'Tags',
+    'Priority',
+    'Status',
 
 /**
  * Aggregate time entries by dimension (project, user, task)
