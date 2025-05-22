@@ -1,156 +1,94 @@
 /**
- * Project service for project CRUD operations
+ * Project Service
+ * Handles all operations related to projects
  */
 
-import { authService } from './authService';
+// Fetch all projects with optional filtering
+export const fetchProjects = async (filters = {}) => {
+  try {
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
 
-const TABLE_NAME = 'project';
+    // Define the table name based on the provided JSON
+    const tableName = 'project';
+    
+    // Set up query parameters
+    const params = {
+      fields: ['Name', 'description', 'color', 'Tags', 'CreatedOn', 'ModifiedOn'],
+      orderBy: [{ fieldName: 'ModifiedOn', SortType: 'DESC' }]
+    };
 
-// Get all fields for projects
-const PROJECT_FIELDS = [
-  'Name', 'Tags', 'Owner', 'CreatedOn', 'CreatedBy', 
-  'ModifiedOn', 'ModifiedBy', 'description', 'color'
-];
+    // Add filters if provided
+    if (filters.where) {
+      params.where = filters.where;
+    }
 
-// Get only updatable fields for creating/updating projects
-const UPDATABLE_FIELDS = ['Name', 'Tags', 'Owner', 'description', 'color'];
-
-export const projectService = {
-  /**
-   * Get all projects
-   * @returns {Promise<Array>} Projects list
-   */
-  getAllProjects: async () => {
-    try {
-      const apperClient = authService.getApperClient();
-      const params = {
-        fields: PROJECT_FIELDS,
-        orderBy: [{ fieldName: 'Name', SortType: 'ASC' }]
-      };
-      
-      const response = await apperClient.fetchRecords(TABLE_NAME, params);
-      
-      if (!response || !response.data) {
-        return [];
-      }
-      
-      return response.data.map(project => ({
-        id: project.Id,
-        name: project.Name,
-        description: project.description || '',
-        color: project.color || '#4f46e5',
-        tags: project.Tags ? project.Tags.split(',') : [],
-        createdAt: project.CreatedOn,
-        owner: project.Owner
-      }));
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Get a project by ID
-   * @param {number} projectId Project ID
-   * @returns {Promise<Object>} Project details
-   */
-  getProjectById: async (projectId) => {
-    try {
-      const apperClient = authService.getApperClient();
-      const params = {
-        fields: PROJECT_FIELDS
-      };
-      
-      const response = await apperClient.getRecordById(TABLE_NAME, projectId, params);
-      
-      if (!response || !response.data) {
-        return null;
-      }
-      
-      const project = response.data;
-      return {
-        id: project.Id,
-        name: project.Name,
-        description: project.description || '',
-        color: project.color || '#4f46e5',
-        tags: project.Tags ? project.Tags.split(',') : [],
-        createdAt: project.CreatedOn,
-        owner: project.Owner
-      };
-    } catch (error) {
-      console.error(`Error fetching project ${projectId}:`, error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Create a new project
-   * @param {Object} projectData Project data
-   * @returns {Promise<Object>} Created project
-   */
-  createProject: async (projectData) => {
-    try {
-      const apperClient = authService.getApperClient();
-      const params = {
-        records: [{
-          Name: projectData.name,
-          description: projectData.description || '',
-          color: projectData.color || '#4f46e5',
-          Tags: projectData.tags ? projectData.tags.join(',') : ''
-        }]
-      };
-      
-      const response = await apperClient.createRecord(TABLE_NAME, params);
-      return response;
-    } catch (error) {
-      console.error('Error creating project:', error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Update a project
-   * @param {Object} projectData Project data with ID
-   * @returns {Promise<Object>} Updated project
-   */
-  updateProject: async (projectData) => {
-    try {
-      const apperClient = authService.getApperClient();
-      const params = {
-        records: [{
-          Id: projectData.id,
-          Name: projectData.name,
-          description: projectData.description || '',
-          color: projectData.color || '#4f46e5',
-          Tags: projectData.tags ? projectData.tags.join(',') : ''
-        }]
-      };
-      
-      const response = await apperClient.updateRecord(TABLE_NAME, params);
-      return response;
-    } catch (error) {
-      console.error('Error updating project:', error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Delete a project
-   * @param {number} projectId Project ID
-   * @returns {Promise<Object>} Deletion result
-   */
-  deleteProject: async (projectId) => {
-    try {
-      const apperClient = authService.getApperClient();
-      const params = {
-        RecordIds: [projectId]
-      };
-      
-      const response = await apperClient.deleteRecord(TABLE_NAME, params);
-      return response;
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      throw error;
-    }
+    const response = await apperClient.fetchRecords(tableName, params);
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    throw error;
   }
 };
+
+// Get a single project by ID
+export const getProjectById = async (projectId) => {
+  try {
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+
+    const tableName = 'project';
+    const params = {
+      fields: ['Name', 'description', 'color', 'Tags', 'CreatedOn', 'ModifiedOn']
+    };
+
+    const response = await apperClient.getRecordById(tableName, projectId, params);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching project with ID ${projectId}:`, error);
+    throw error;
+  }
+};
+
+// Create a new project
+export const createProject = async (projectData) => {
+  try {
+    const { ApperClient } = window.ApperSDK;
+    const apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
+
+    const tableName = 'project';
+    
+    // Only include fields with visibility "Updateable"
+    const params = {
+      records: [{
+        Name: projectData.name,
+        description: projectData.description,
+        color: projectData.color || '#4F46E5',
+        Tags: projectData.tags || ''
+      }]
+    };
+
+    const response = await apperClient.createRecord(tableName, params);
+    
+    if (response && response.success && response.results && response.results.length > 0) {
+      const createdProject = response.results[0].data;
+      return createdProject;
+    } else {
+      throw new Error("Failed to create project");
+    }
+  } catch (error) {
+    console.error("Error creating project:", error);
+    throw error;
+  }
+};
+
+export default { fetchProjects, getProjectById, createProject };
