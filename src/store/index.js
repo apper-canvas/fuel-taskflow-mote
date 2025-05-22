@@ -143,7 +143,8 @@ const tasksSlice = createSlice({
       }
     }
   }
-      
+});
+
 
 // Export timer actions
 export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.actions;
