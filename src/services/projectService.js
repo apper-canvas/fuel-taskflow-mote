@@ -34,6 +34,17 @@ export const fetchProjects = async (filters = {}) => {
   }
 };
 
+// Fetch all projects (convenience alias for fetchProjects with no filters)
+export const getAllProjects = async () => {
+  try {
+    // Just call fetchProjects with no filters
+    return await fetchProjects();
+  } catch (error) {
+    console.error("Error in getAllProjects:", error);
+    throw error;
+  }
+};
+
 // Get a single project by ID
 export const getProjectById = async (projectId) => {
   try {
@@ -91,4 +102,9 @@ export const createProject = async (projectData) => {
   }
 };
 
-export default { fetchProjects, getProjectById, createProject };
+// Create a named export object for compatibility with existing imports
+export const projectService = {
+  fetchProjects, getAllProjects, getProjectById, createProject
+};
+
+export default { fetchProjects, getAllProjects, getProjectById, createProject };
