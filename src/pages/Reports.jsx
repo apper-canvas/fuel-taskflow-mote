@@ -2,149 +2,15 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { format, subDays, startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { formatDuration } from '../utils/timeUtils';
+import { formatDuration } from '../utils/timeUtils';
 import ReactApexChart from 'react-apexcharts';
-import { Download, Calendar, BarChart2, PieChart, TrendingUp, Filter, X, FileText, Users } from 'lucide-react';
-import Papa from 'papaparse';
+import { exportToCSV } from '../utils/reportingUtils';
+import { timeEntryService } from '../services/timeEntryService';
+import { taskService } from '../services/taskService';
+import { projectService } from '../services/projectService';
 import { saveAs } from 'file-saver';
-
-// Sample data (this would come from a real data source in a production app)
-const sampleTasks = [
-  {
-    id: 1,
-    title: 'Design new dashboard layout',
-    description: 'Create wireframes and mockups for the new analytics dashboard',
-    dueDate: new Date(Date.now() + 86400000 * 3), // 3 days from now
-    priority: 'High',
-    status: 'In Progress',
-    tags: ['Design', 'UI/UX'],
-    assignee: 'Alex Johnson',
-    project: 'Website Redesign',
-    timeEntries: [
-      {
-        id: 101,
-        id: 101,
-        startTime: new Date(Date.now() - 86400000 * 3), // 3 days ago
-        endTime: new Date(Date.now() - 86400000 * 3 + 7200000), // +2 hours
-        duration: 7200, // 2 hours in seconds
-        description: 'Initial wireframes'
-      },
-      {
-        id: 102,
-        startTime: new Date(Date.now() - 86400000 * 2), // 2 days ago
-        endTime: new Date(Date.now() - 86400000 * 2 + 10800000), // +3 hours
-        duration: 10800, // 3 hours in seconds
-        description: 'Mockups revision'
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Fix search functionality',
-    description: 'Debug and resolve issues with the search feature in the app',
-    dueDate: new Date(Date.now() + 86400000), // 1 day from now
-    priority: 'Urgent',
-    status: 'To Do',
-    tags: ['Bug', 'Frontend'],
-    assignee: 'Morgan Smith',
-    project: 'Mobile App',
-    timeEntries: [
-      {
-        id: 103,
-        startTime: new Date(Date.now() - 86400000), // 1 day ago
-        endTime: new Date(Date.now() - 86400000 + 5400000), // +1.5 hours
-        duration: 5400, // 1.5 hours in seconds
-        description: 'Debugging'
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Weekly team meeting',
-    description: 'Prepare agenda for the weekly team sync meeting',
-    dueDate: new Date(Date.now() + 86400000 * 2), // 2 days from now
-    priority: 'Medium',
-    status: 'To Do',
-    tags: ['Meeting', 'Planning'],
-    assignee: 'Jamie Williams',
-    project: 'Team Management',
-    timeEntries: [
-      {
-        id: 104,
-        startTime: new Date(Date.now() - 86400000 * 7), // 7 days ago
-        endTime: new Date(Date.now() - 86400000 * 7 + 3600000), // +1 hour
-        duration: 3600, // 1 hour in seconds
-        description: 'Meeting prep'
-      },
-      {
-        id: 105,
-        startTime: new Date(Date.now() - 86400000 * 7 + 7200000), // 7 days ago +2 hours
-        endTime: new Date(Date.now() - 86400000 * 7 + 7200000 + 3600000), // +1 hour
-        duration: 3600, // 1 hour in seconds
-        description: 'Meeting'
-      },
-      {
-        id: 106,
-        startTime: new Date(Date.now() - 86400000 + 14400000), // 1 day ago +4 hours
-        endTime: new Date(Date.now() - 86400000 + 14400000 + 5400000), // +1.5 hours
-        duration: 5400, // 1.5 hours in seconds
-        description: 'Follow-up tasks'
-      }
-    ]
-  },
-  {
-    id: 4,
-    title: 'Implement authentication',
-    description: 'Add OAuth authentication to the platform',
-    dueDate: new Date(Date.now() + 86400000 * 5), // 5 days from now
-    priority: 'High',
-    status: 'In Progress',
-    tags: ['Backend', 'Security'],
-    assignee: 'Morgan Smith',
-    project: 'API Development',
-    timeEntries: [
-      {
-        id: 107,
-        startTime: new Date(Date.now() - 86400000 * 4), // 4 days ago
-        endTime: new Date(Date.now() - 86400000 * 4 + 18000000), // +5 hours
-        duration: 18000, // 5 hours in seconds
-        description: 'OAuth implementation'
-      },
-      {
-        id: 108,
-        startTime: new Date(Date.now() - 86400000 * 2 + 14400000), // 2 days ago +4 hours
-        endTime: new Date(Date.now() - 86400000 * 2 + 14400000 + 10800000), // +3 hours
-        duration: 10800, // 3 hours in seconds
-        description: 'Testing auth flows'
-      }
-    ]
-  },
-  {
-    id: 5,
-    title: 'Content creation for blog',
-    description: 'Write articles for the company blog',
-    dueDate: new Date(Date.now() + 86400000 * 7), // 7 days from now
-    priority: 'Medium',
-    status: 'To Do',
-    tags: ['Content', 'Marketing'],
-    assignee: 'Alex Johnson',
-    project: 'Content Marketing',
-    timeEntries: [
-      {
-        id: 109,
-        startTime: new Date(Date.now() - 86400000 * 5), // 5 days ago
-        endTime: new Date(Date.now() - 86400000 * 5 + 10800000), // +3 hours
-        duration: 10800, // 3 hours in seconds
-        description: 'Research'
-      },
-      {
-        id: 110,
-        startTime: new Date(Date.now() - 86400000 * 3 + 10800000), // 3 days ago +3 hours
-        endTime: new Date(Date.now() - 86400000 * 3 + 10800000 + 14400000), // +4 hours
-        duration: 14400, // 4 hours in seconds
-        description: 'Writing first draft'
-      }
-    ]
-  }
+// State for data loading and filtering
+import { toast } from 'react-toastify';
 ];
 
 // Time ranges for filtering
@@ -159,6 +25,18 @@ const TIME_RANGES = {
 };
 
 const Reports = () => {
+  // State for loaded data
+  const [tasks, setTasks] = useState([]);
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [projectsList, setProjectsList] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  
+  // Loading and error states
+  const [loading, setLoading] = useState(false);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [error, setError] = useState(null);
+  
   // State for filter options
   const [dateRange, setDateRange] = useState(TIME_RANGES.THIS_WEEK);
   const [startDate, setStartDate] = useState(() => format(startOfWeek(new Date()), 'yyyy-MM-dd'));
@@ -168,11 +46,125 @@ const Reports = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Extract unique projects and users for filter dropdowns
   const [filteredTag, setFilteredTag] = useState('All Tags');
+  
+  // Load data on component mount
+  useEffect(() => {
+    fetchData();
+    fetchProjects();
+  }, []);
+  
+  // Fetch data when filters change
+  useEffect(() => {
+    fetchTimeEntriesWithFilters();
+  }, [startDate, endDate, selectedProject, selectedUser, filteredTag]);
+  
+  // Fetch tasks and users
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchedTasks = await taskService.getAllTasks();
+      setTasks(fetchedTasks);
+      
+      // Extract unique users from tasks
+      const users = [...new Set(fetchedTasks.map(task => task.assignee).filter(Boolean))];
+      setUsersList(['All Users', ...users]);
+      
+      // Initial time entries load
+      fetchTimeEntriesWithFilters();
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to load data. Please try again.');
+      toast.error('Failed to load report data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const projects = ['All Projects', ...new Set(sampleTasks.map(task => task.project))];
-  const users = ['All Users', ...new Set(sampleTasks.map(task => task.assignee))];
+  // Fetch projects
+  const fetchProjects = async () => {
+    setLoadingProjects(true);
+    try {
+      const fetchedProjects = await projectService.getAllProjects();
+      setProjectsList(['All Projects', ...fetchedProjects.map(p => p.name)]);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast.error('Failed to load projects');
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+  
+  // Fetch time entries with filters
+  const fetchTimeEntriesWithFilters = async () => {
+    setLoading(true);
+    try {
+      // Convert dates to proper format
+      const start = parseISO(startDate);
+      const end = parseISO(endDate);
+      end.setHours(23, 59, 59, 999); // Include the full end day
+      
+      // Fetch all time entries in the date range
+      const allTimeEntries = await timeEntryService.getAllTimeEntries({
+        startDate: startDate,
+        endDate: format(end, 'yyyy-MM-dd')
+      });
+      
+      // Enrich time entries with task data
+      const enrichedEntries = await Promise.all(
+        allTimeEntries.map(async (entry) => {
+          try {
+            if (entry.taskId) {
+              const task = tasks.find(t => t.id === entry.taskId) || 
+                          await taskService.getTaskById(entry.taskId);
+              
+              return {
+                ...entry,
+                taskTitle: task?.title || 'Unknown Task',
+                project: task?.project || 'No Project',
+                assignee: task?.assignee || 'Unassigned',
+                tags: task?.tags || []
+              };
+            }
+            return entry;
+          } catch (error) {
+            console.error(`Error enriching time entry ${entry.id}:`, error);
+            return {
+              ...entry,
+              taskTitle: 'Unknown Task',
+              project: 'No Project',
+              assignee: 'Unassigned',
+              tags: []
+            };
+          }
+        })
+      );
+      
+      // Apply filters
+      let filtered = enrichedEntries;
+      
+      if (selectedProject !== 'All Projects') {
+        filtered = filtered.filter(entry => entry.project === selectedProject);
+      }
+      
+      if (selectedUser !== 'All Users') {
+        filtered = filtered.filter(entry => entry.assignee === selectedUser);
+      }
+      
+      if (filteredTag !== 'All Tags') {
+        filtered = filtered.filter(entry => entry.tags && entry.tags.includes(filteredTag));
+      }
+      
+      setTimeEntries(filtered);
+    } catch (error) {
+      console.error('Error fetching time entries:', error);
+      setError('Failed to load time entries. Please try again.');
+      toast.error('Failed to load time entry data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Update date range when the range type changes
   useEffect(() => {
@@ -217,48 +209,12 @@ const Reports = () => {
     }
   }, [dateRange]);
 
-  // Filter time entries based on selected date range, project and user
-  const getFilteredTimeEntries = () => {
-    const start = parseISO(startDate);
-    const end = parseISO(endDate);
-    end.setHours(23, 59, 59, 999); // Include the full end day
-    
-    return sampleTasks
-      .filter(task => {
-        // Filter by project if needed
-        if (selectedProject !== 'All Projects' && task.project !== selectedProject) {
-          return false;
-        }
-        
-        // Filter by user if needed
-        if (selectedUser !== 'All Users' && task.assignee !== selectedUser) {
-          return false;
-        }
-        
-        // Apply tag filter if not "All Tags"
-        if (filteredTag !== 'All Tags' && (!task.tags || !task.tags.includes(filteredTag))) {
-          return false;
-        }
-        
-        return true;
-      })
-      .flatMap(task => {
-        return (task.timeEntries || [])
-          .filter(entry => {
-            const entryDate = new Date(entry.startTime);
-            return isWithinInterval(entryDate, { start, end });
-          })
-          .map(entry => ({
-            ...entry,
-            taskId: task.id,
-            taskTitle: task.title,
-            project: task.project,
-            assignee: task.assignee,
-            status: task.status
-          }));
-      });
+  // Get all unique tags from tasks
+  const getAllTags = () => {
+    const allTags = new Set(tasks.flatMap(task => task.tags || []));
+    return ['All Tags', ...Array.from(allTags)].sort();
   };
-
+  
   // Calculate total time spent
   const getTotalTimeSpent = (entries) => {
     return entries.reduce((total, entry) => total + entry.duration, 0);
@@ -266,7 +222,7 @@ const Reports = () => {
 
   // Prepare data for time by project chart
   const getTimeByProjectData = () => {
-    const filteredEntries = getFilteredTimeEntries();
+    const filteredEntries = timeEntries;
     const projectData = {};
     
     filteredEntries.forEach(entry => {
@@ -287,7 +243,7 @@ const Reports = () => {
 
   // Prepare data for time by user chart
   const getTimeByUserData = () => {
-    const filteredEntries = getFilteredTimeEntries();
+    const filteredEntries = timeEntries;
     const userData = {};
     
     filteredEntries.forEach(entry => {
@@ -308,7 +264,7 @@ const Reports = () => {
 
   // Prepare data for time by task chart
   const getTimeByTaskData = () => {
-    const filteredEntries = getFilteredTimeEntries();
+    const filteredEntries = timeEntries;
     const taskData = {};
     
     filteredEntries.forEach(entry => {
@@ -335,7 +291,7 @@ const Reports = () => {
 
   // Get day-by-day time distribution
   const getTimeDistributionData = () => {
-    const filteredEntries = getFilteredTimeEntries();
+    const filteredEntries = timeEntries;
     const timeByDay = {};
     
     // Initialize days in the range
@@ -370,13 +326,9 @@ const Reports = () => {
 
   // Export data as CSV
   const exportCSV = () => {
-    const filteredEntries = getFilteredTimeEntries();
+    const filteredEntries = timeEntries;
     const fileName = `time-report-${startDate}-to-${endDate}.csv`;
-    
-    // Import the exported utility function from reportingUtils instead
-    import('../utils/reportingUtils').then(module => {
-      module.exportToCSV(filteredEntries, fileName);
-    });
+    exportToCSV(filteredEntries, fileName);
   };
 
   return (
@@ -388,6 +340,17 @@ const Reports = () => {
     >
       <div className="mx-auto max-w-7xl px-4 py-8 pt-16 sm:px-6 sm:py-12 sm:pt-20 lg:px-8">
         <div className="mb-6 mt-4 flex flex-wrap items-center justify-between gap-4">
+          {/* Loading indicator */}
+          {loading && (
+            <div className="text-primary flex items-center">
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+              <span>Loading report data...</span>
+            </div>
+          )}
+          {/* Error display */}
+          {error && (
+            <div className="text-red-500">{error}</div>
+          )}
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Time Reports</h1>
             <p className="mt-1 text-surface-600 dark:text-surface-400">
@@ -459,8 +422,9 @@ const Reports = () => {
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
                   className="input w-full"
+                  disabled={loadingProjects}
                 >
-                  {projects.map((project) => (
+                  {projectsList.map((project) => (
                     <option key={project} value={project}>{project}</option>
                   ))}
                 </select>
@@ -472,8 +436,22 @@ const Reports = () => {
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
                   className="input w-full"
+                  disabled={loadingUsers}
                 >
-                  {users.map((user) => (
+                  {usersList.map((user) => (
+                    <option key={user} value={user}>{user}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="mb-1 block text-sm font-medium">Tag</label>
+                <select
+                  value={filteredTag}
+                  onChange={(e) => setFilteredTag(e.target.value)}
+                  className="input w-full"
+                >
+                  {getAllTags().map((tag) => (
                     <option key={user} value={user}>{user}</option>
                   ))}
                 </select>
@@ -534,11 +512,11 @@ const Reports = () => {
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <div className="rounded-lg border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-800">
             <h3 className="mb-1 text-lg font-medium">Total Time</h3>
-            <p className="text-2xl font-semibold text-primary">{formatDuration(getTotalTimeSpent(getFilteredTimeEntries()))}</p>
+            <p className="text-2xl font-semibold text-primary">{formatDuration(getTotalTimeSpent(timeEntries))}</p>
           </div>
           <div className="rounded-lg border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-800">
             <h3 className="mb-1 text-lg font-medium">Time Entries</h3>
-            <p className="text-2xl font-semibold text-primary">{getFilteredTimeEntries().length}</p>
+            <p className="text-2xl font-semibold text-primary">{timeEntries.length}</p>
           </div>
           <div className="rounded-lg border border-surface-200 bg-white p-4 dark:border-surface-700 dark:bg-surface-800">
             <h3 className="mb-1 text-lg font-medium">Date Range</h3>

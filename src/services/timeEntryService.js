@@ -1,9 +1,8 @@
 /**
- * Time Entry service for time entry CRUD operations
+ * Time Entry service for time tracking operations
  */
 
 import { authService } from './authService';
-import { format, isWithinInterval, parseISO } from 'date-fns';
 
 const TABLE_NAME = 'time_entry';
 
@@ -22,22 +21,42 @@ const UPDATABLE_FIELDS = [
 
 export const timeEntryService = {
   /**
-   * Get all time entries for a task
-   * @param {number} taskId Task ID
+   * Get all time entries, optionally filtered by taskId
+   * @param {Object} filters Optional filters (e.g., { taskId: 123 })
    * @returns {Promise<Array>} Time entries list
    */
-  getTimeEntriesByTask: async (taskId) => {
+  getAllTimeEntries: async (filters = {}) => {
     try {
       const apperClient = authService.getApperClient();
       const params = {
         fields: TIME_ENTRY_FIELDS,
-        orderBy: [{ fieldName: 'startTime', SortType: 'DESC' }],
-        where: [{
+        orderBy: [{ fieldName: 'startTime', SortType: 'DESC' }]
+      };
+      
+      // Apply filters if provided
+      if (filters.taskId) {
+        params.where = [{
           fieldName: 'taskId',
           operator: 'ExactMatch',
-          values: [taskId]
-        }]
-      };
+          values: [filters.taskId]
+        }];
+      }
+      
+      if (filters.startDate && filters.endDate) {
+        if (!params.where) params.where = [];
+        
+        params.where.push({
+          fieldName: 'startTime',
+          operator: 'GreaterThanOrEqualTo',
+          values: [filters.startDate]
+        });
+        
+        params.where.push({
+          fieldName: 'endTime',
+          operator: 'LessThanOrEqualTo',
+          values: [filters.endDate]
+        });
+      }
       
       const response = await apperClient.fetchRecords(TABLE_NAME, params);
       
@@ -48,142 +67,78 @@ export const timeEntryService = {
       return response.data.map(entry => ({
         id: entry.Id,
         taskId: entry.taskId,
-        startTime: entry.startTime,
-        endTime: entry.endTime,
+        startTime: new Date(entry.startTime),
+        endTime: new Date(entry.endTime),
         duration: entry.duration,
-        description: entry.description || ''
+        description: entry.description || '',
+        createdAt: entry.CreatedOn,
+        name: entry.Name
       }));
     } catch (error) {
-      console.error(`Error fetching time entries for task ${taskId}:`, error);
+      console.error('Error fetching time entries:', error);
       throw error;
     }
   },
   
   /**
-   * Get time entries based on filters
-   * @param {Object} filters Filter criteria (startDate, endDate, project, user)
-   * @returns {Promise<Array>} Filtered time entries
+   * Get a time entry by ID
+   * @param {number} entryId Time entry ID
+   * @returns {Promise<Object>} Time entry details
    */
-  getFilteredTimeEntries: async (filters) => {
+  getTimeEntryById: async (entryId) => {
     try {
-      const { startDate, endDate, project, user } = filters;
       const apperClient = authService.getApperClient();
-      
-      // First, get tasks based on project/user filters
-      const taskParams = {
-        fields: ['Id', 'title', 'project', 'assignee', 'status']
+      const params = {
+        fields: TIME_ENTRY_FIELDS
       };
       
-      if (project && project !== 'All Projects') {
-        taskParams.where = [
-          {
-            fieldName: 'project',
-            operator: 'ExactMatch',
-            values: [project]
-          }
-        ];
+      const response = await apperClient.getRecordById(TABLE_NAME, entryId, params);
+      
+      if (!response || !response.data) {
+        return null;
       }
       
-      if (user && user !== 'All Users') {
-        if (!taskParams.where) taskParams.where = [];
-        taskParams.where.push({
-          fieldName: 'assignee',
-          operator: 'ExactMatch',
-          values: [user]
-        });
-      }
-      
-      const tasksResponse = await apperClient.fetchRecords('task1', taskParams);
-      if (!tasksResponse || !tasksResponse.data || tasksResponse.data.length === 0) {
-        return [];
-      }
-      
-      const taskIds = tasksResponse.data.map(task => task.Id);
-      
-      // Get time entries for these tasks within date range
-      const timeParams = {
-        fields: TIME_ENTRY_FIELDS,
-        where: [
-          {
-            fieldName: 'taskId',
-            operator: 'ExactMatch',
-            values: taskIds
-          },
-          {
-            fieldName: 'startTime',
-            operator: 'GreaterThanOrEqualTo',
-            values: [new Date(startDate).toISOString()]
-          },
-          {
-            fieldName: 'endTime',
-            operator: 'LessThanOrEqualTo',
-            values: [new Date(endDate).toISOString()]
-          }
-        ]
+      const entry = response.data;
+      return {
+        id: entry.Id,
+        taskId: entry.taskId,
+        startTime: new Date(entry.startTime),
+        endTime: new Date(entry.endTime),
+        duration: entry.duration,
+        description: entry.description || '',
+        createdAt: entry.CreatedOn,
+        name: entry.Name
       };
-      
-      const timeResponse = await apperClient.fetchRecords(TABLE_NAME, timeParams);
-      if (!timeResponse || !timeResponse.data) {
-        return [];
-      }
-      
-      // Join with task information
-      const taskMap = {};
-      tasksResponse.data.forEach(task => {
-        taskMap[task.Id] = {
-          id: task.Id,
-          title: task.title,
-          project: task.project,
-          assignee: task.assignee,
-          status: task.status
-        };
-      });
-      
-      return timeResponse.data.map(entry => {
-        const task = taskMap[entry.taskId] || { title: 'Unknown Task' };
-        return {
-          id: entry.Id,
-          taskId: entry.taskId,
-          taskTitle: task.title,
-          project: task.project,
-          assignee: task.assignee,
-          status: task.status,
-          startTime: entry.startTime,
-          endTime: entry.endTime,
-          duration: entry.duration,
-          description: entry.description || ''
-        };
-      });
     } catch (error) {
-      console.error('Error filtering time entries:', error);
+      console.error(`Error fetching time entry ${entryId}:`, error);
       throw error;
     }
   },
   
   /**
-   * Add a time entry to a task
-   * @param {number} taskId Task ID
-   * @param {Object} timeEntry Time entry data
+   * Create a new time entry
+   * @param {Object} entryData Time entry data
    * @returns {Promise<Object>} Created time entry
    */
-  addTimeEntry: async (taskId, timeEntry) => {
+  createTimeEntry: async (entryData) => {
     try {
       const apperClient = authService.getApperClient();
       const params = {
         records: [{
-          Name: `Time entry for task ${taskId}`,
-          taskId: taskId,
-          startTime: new Date(timeEntry.startTime).toISOString(),
-          endTime: new Date(timeEntry.endTime).toISOString(),
-          duration: timeEntry.duration,
-          description: timeEntry.description || ''
+          Name: entryData.description || `Time entry for task ${entryData.taskId}`,
+          startTime: entryData.startTime.toISOString(),
+          endTime: entryData.endTime.toISOString(),
+          duration: entryData.duration,
+          description: entryData.description || '',
+          taskId: entryData.taskId,
+          Tags: entryData.tags ? entryData.tags.join(',') : ''
         }]
       };
       
       const response = await apperClient.createRecord(TABLE_NAME, params);
       return response;
     } catch (error) {
-      console.error('Error adding time entry:', error);
+      console.error('Error creating time entry:', error);
       throw error;
     }
   },
@@ -206,14 +161,5 @@ export const timeEntryService = {
       console.error('Error deleting time entry:', error);
       throw error;
     }
-  },
-  
-  /**
-   * Calculate total time spent from entries
-   * @param {Array} entries Time entries
-   * @returns {Number} Total seconds
-   */
-  calculateTotalTime: (entries) => {
-    return entries.reduce((total, entry) => total + entry.duration, 0);
   }
 };

@@ -4,14 +4,13 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { useSelector, useDispatch } from 'react-redux';
 import { getIcon } from '../utils/iconUtils';
-import { selectAllTemplates } from '../store/templatesSlice';
 import { formatDuration } from '../utils/timeUtils'; 
 import TimeTracker from './TimeTracker';
-import { 
-  selectAllTasks, createTask, updateTask, deleteTask, 
-  changeTaskStatus, addTimeEntry, deleteTimeEntry, stopTimer,
-  selectAllProjects
-} from '../store';
+import { stopTimer } from '../store';
+import { taskService } from '../services/taskService';
+import { projectService } from '../services/projectService';
+import { templateService } from '../services/templateService';
+import { timeEntryService } from '../services/timeEntryService';
 
 // Icons
 const PlusIcon = getIcon('plus');
@@ -47,12 +46,30 @@ const STATUS_COLORS = {
 
 const MainFeature = () => {
   // State for tasks management
+  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [loadingTimeEntry, setLoadingTimeEntry] = useState(false);
+  const [savingTask, setSavingTask] = useState(false);
+  const [deletingTask, setDeletingTask] = useState(false);
+  const [error, setError] = useState(null);
+
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [filteredStatus, setFilteredStatus] = useState('All');
   const [filteredProject, setFilteredProject] = useState('All Projects');
   const [sortOption, setSortOption] = useState('dueDate');
   const [editingTask, setEditingTask] = useState(null);
   
+  // Load data on component mount
+  useEffect(() => {
+    fetchTasks();
+    fetchProjects();
+    fetchTemplates();
+  }, []);
+
   // Form state
   const [taskForm, setTaskForm] = useState({
     title: '',
@@ -66,10 +83,7 @@ const MainFeature = () => {
     tags: '',
   });
 
-  // Redux state
-  const tasks = useSelector(selectAllTasks);
-  const projects = useSelector(selectAllProjects);
-  const templates = useSelector(selectAllTemplates);
+  // Redux timer state
   const activeTimer = useSelector(state => state.timer.activeTimer);
   const dispatch = useDispatch();
   const [showTimeEntryForm, setShowTimeEntryForm] = useState(false);
@@ -88,6 +102,64 @@ const MainFeature = () => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
   
+  // Fetch tasks from API
+  const fetchTasks = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchedTasks = await taskService.getAllTasks();
+      
+      // Get time entries for each task
+      const tasksWithTimeEntries = await Promise.all(
+        fetchedTasks.map(async (task) => {
+          try {
+            const timeEntries = await timeEntryService.getAllTimeEntries({ taskId: task.id });
+            return { ...task, timeEntries };
+          } catch (error) {
+            console.error(`Error fetching time entries for task ${task.id}:`, error);
+            return { ...task, timeEntries: [] };
+          }
+        })
+      );
+      
+      setTasks(tasksWithTimeEntries);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setError('Failed to load tasks. Please try again.');
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch projects from API
+  const fetchProjects = async () => {
+    setLoadingProjects(true);
+    try {
+      const fetchedProjects = await projectService.getAllProjects();
+      setProjects(fetchedProjects);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast.error('Failed to load projects');
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  // Fetch templates from API
+  const fetchTemplates = async () => {
+    setLoadingTemplates(true);
+    try {
+      const fetchedTemplates = await templateService.getAllTemplates();
+      setTemplates(fetchedTemplates);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      toast.error('Failed to load templates');
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
   // Effect to handle form editing
   useEffect(() => {
     if (editingTask) {
@@ -209,11 +281,12 @@ const MainFeature = () => {
   };
   
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
       toast.error("Please fix the errors in the form");
+      setSavingTask(false);
       return;
     }
     
@@ -230,35 +303,78 @@ const MainFeature = () => {
         projectName = selectedProject.name;
       }
     }
+
+    // Prepare task data object
+    const taskData = {
+      title: taskForm.title,
+      projectId: taskForm.projectId ? parseInt(taskForm.projectId) : null,
+      description: taskForm.description,
+      project: projectName || '',
+      dueDate: new Date(taskForm.dueDate),
+      priority: taskForm.priority,
+      status: taskForm.status,
+      tags: tagArray
+    };
+
+    setSavingTask(true);
     
     // Update or create task
     if (editingTask) {
       // Update existing task
-      dispatch(updateTask({
-        id: editingTask,
-        title: taskForm.title,
-        projectId: taskForm.projectId ? parseInt(taskForm.projectId) : null,
-        description: taskForm.description,
-        project: projectName || '',
-        dueDate: new Date(taskForm.dueDate),
-        priority: taskForm.priority,
-        status: taskForm.status,
-        tags: tagArray
-      }));
-      toast.success("Task updated successfully!");
+      try {
+        await taskService.updateTask({
+          id: editingTask,
+          ...taskData
+        });
+        
+        toast.success("Task updated successfully!");
+        
+        // Refresh tasks list
+        fetchTasks();
+      } catch (error) {
+        console.error('Error updating task:', error);
+        toast.error("Failed to update task");
+      } finally {
+        setSavingTask(false);
+      }
     } else {
       // Create new task
-      dispatch(createTask({
-        title: taskForm.title,
-        projectId: taskForm.projectId ? parseInt(taskForm.projectId) : null,
-        description: taskForm.description,
-        project: projectName || '',
-        dueDate: new Date(taskForm.dueDate),
-        priority: taskForm.priority,
-        status: taskForm.status,
-        tags: tagArray
+      try {
+        await taskService.createTask(taskData);
+        
+        toast.success("New task created!");
+        
+        // Refresh tasks list
+        fetchTasks();
+      } catch (error) {
+        console.error('Error creating task:', error);
+        toast.error("Failed to create task");
+      } finally {
+        setSavingTask(false);
+      }
+    }
+    
+    // Reset form and close it
+    resetForm();
+  };
+
+  // Handle status change
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      await taskService.changeTaskStatus(taskId, newStatus);
+      
+      // Update local state
+      setTasks(tasks.map(task => {
+        if (task.id === taskId) {
+          return { ...task, status: newStatus };
+        }
+        return task;
       }));
-      toast.success("New task created!");
+      
+      toast.success(`Task marked as ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Failed to update task status');
     }
     
     // Reset form and close it
@@ -293,16 +409,29 @@ const MainFeature = () => {
   };
 
   // Add time entry manually
-  const handleAddTimeEntry = (e) => {
+  const handleAddTimeEntry = async (e) => {
     e.preventDefault();
     
     const hours = parseInt(timeEntryForm.hours) || 0;
     const minutes = parseInt(timeEntryForm.minutes) || 0;
     const totalSeconds = (hours * 60 * 60) + (minutes * 60);
     
+    setLoadingTimeEntry(true);
+    
     if (totalSeconds <= 0) {
       toast.error("Please enter a valid time duration");
+      setLoadingTimeEntry(false);
       return;
+    }
+
+    const startTime = new Date(new Date().getTime() - (totalSeconds * 1000));
+    const endTime = new Date();
+    
+    try {
+      await addTimeEntryToTask(selectedTaskForTimeEntry, totalSeconds, timeEntryForm.description, startTime, endTime);
+      toast.success("Time entry added successfully!");
+    } catch (error) {
+      toast.error("Failed to add time entry");
     }
     
     const newTimeEntry = {
@@ -313,21 +442,29 @@ const MainFeature = () => {
       description: timeEntryForm.description.trim()
     };
     
-    dispatch(addTimeEntry({
-      taskId: selectedTaskForTimeEntry,
-      timeEntry: newTimeEntry
-    }));
     setShowTimeEntryForm(false);
     setSelectedTaskForTimeEntry(null);
-    toast.success("Time entry added successfully!");
+    setLoadingTimeEntry(false);
   };
   
   // Delete a task
-  const handleDeleteTask = (taskId) => {
-    dispatch(deleteTask(taskId));
-    toast.success("Task deleted successfully!");
-    setShowDeleteConfirmation(false);
-    setTaskToDelete(null);
+  const handleDeleteTask = async (taskId) => {
+    setDeletingTask(true);
+    try {
+      await taskService.deleteTask(taskId);
+      
+      // Update local state
+      setTasks(tasks.filter(task => task.id !== taskId));
+      
+      toast.success("Task deleted successfully!");
+      setShowDeleteConfirmation(false);
+      setTaskToDelete(null);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
+    } finally {
+      setDeletingTask(false);
+    }
   };
   
   // Confirm task deletion
@@ -336,38 +473,56 @@ const MainFeature = () => {
     setShowDeleteConfirmation(true);
   };
   
-  // Change task status quickly
-  const handleStatusChange = (taskId, newStatus) => {
-    dispatch(changeTaskStatus({
-      taskId, newStatus
-    })
-    );
-    toast.info(`Task marked as ${newStatus}`);
-  };
-  
   // Edit a task
   const handleEditTask = (taskId) => {
     setEditingTask(taskId);
   };
 
   // Handle time entry completed from timer
-  const handleTimeEntryCompleted = (taskId, seconds, startTime, endTime) => {
-    addTimeEntryToTask(taskId, seconds, '', startTime, endTime);
+  const handleTimeEntryCompleted = async (taskId, seconds, startTime, endTime) => {
+    try {
+      await addTimeEntryToTask(taskId, seconds, '', startTime, endTime);
+    } catch (error) {
+      console.error('Error adding time entry:', error);
+      toast.error('Failed to add time entry');
+      return;
+    }
+    
     toast.success("Time tracked successfully!");
   };
 
   // Add a time entry from timer
-  const addTimeEntryToTask = (taskId, seconds, description, startTime = null, endTime = null) => {
-    const newTimeEntry = {
-      id: Date.now(),
-      startTime: startTime || new Date(new Date().getTime() - (seconds * 1000)),
-      endTime: endTime || new Date(),
+  const addTimeEntryToTask = async (taskId, seconds, description, startTime = null, endTime = null) => {
+    const entryStartTime = startTime || new Date(new Date().getTime() - (seconds * 1000));
+    const entryEndTime = endTime || new Date();
+    
+    const timeEntryData = {
+      taskId,
+      startTime: entryStartTime,
+      endTime: entryEndTime,
       duration: seconds,
       description: description.trim()
     };
     
-    dispatch(addTimeEntry({ taskId, timeEntry: newTimeEntry }));
-    toast.success("Time entry added");
+    try {
+      await timeEntryService.createTimeEntry(timeEntryData);
+      
+      // Refresh time entries for this task
+      const timeEntries = await timeEntryService.getAllTimeEntries({ taskId });
+      
+      // Update the task in local state
+      setTasks(tasks.map(task => {
+        if (task.id === taskId) {
+          return { ...task, timeEntries };
+        }
+        return task;
+      }));
+      
+      return true;
+    } catch (error) {
+      console.error('Error adding time entry:', error);
+      throw error;
+    }
   };
 
   // Calculate total time spent on a task
@@ -377,11 +532,27 @@ const MainFeature = () => {
   };
 
   // Delete a time entry
-  const handleDeleteTimeEntry = (taskId, entryId) => {
-    dispatch(deleteTimeEntry({
-      taskId, entryId
-    }));
-    toast.success("Time entry deleted successfully");
+  const handleDeleteTimeEntry = async (taskId, entryId) => {
+    try {
+      await timeEntryService.deleteTimeEntry(entryId);
+      
+      // Update the task in local state
+      const updatedTasks = tasks.map(task => {
+        if (task.id === taskId) {
+          return {
+            ...task,
+            timeEntries: task.timeEntries.filter(entry => entry.id !== entryId)
+          };
+        }
+        return task;
+      });
+      
+      setTasks(updatedTasks);
+      toast.success("Time entry deleted successfully");
+    } catch (error) {
+      console.error('Error deleting time entry:', error);
+      toast.error('Failed to delete time entry');
+    }
   };
   
   // Calculate due date label and style
@@ -408,6 +579,20 @@ const MainFeature = () => {
     <div className="rounded-xl bg-white p-6 shadow-soft dark:bg-surface-800">
       {/* Task Controls */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Loading indicator */}
+        {loading && (
+          <div className="text-primary flex items-center">
+            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <span>Loading tasks...</span>
+          </div>
+        )}
+        
+        {/* Error message */}
+        {error && (
+          <div className="text-red-500">
+            {error}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-lg font-semibold sm:mr-4">Tasks</h3>
           
@@ -662,10 +847,16 @@ const MainFeature = () => {
                   Cancel
                 </button>
                 <button
+                  disabled={savingTask}
                   type="submit"
                   className="btn btn-primary"
                 >
-                  <CheckIcon className="mr-1 h-4 w-4" />
+                  {savingTask ? (
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                  ) : (
+                    <XIcon className="mr-1 h-4 w-4" />
+                  )}
+                  
                   {editingTask ? "Update Task" : "Create Task"}
                 </button>
               </div>
@@ -673,7 +864,13 @@ const MainFeature = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      
+                  {savingTask ? (
+                    <div className="flex items-center">
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      <span>{editingTask ? "Updating..." : "Creating..."}</span>
+                    </div>
+                  ) : (
+                  editingTask ? "Update Task" : "Create Task")}
       {/* Task List */}
       <div className="space-y-4">
         {getFilteredTasks().length === 0 ? (
@@ -911,6 +1108,7 @@ const MainFeature = () => {
                 </button>
                 <button
                   onClick={() => handleDeleteTask(taskToDelete)}
+                  disabled={deletingTask}
                   className="btn bg-red-500 text-white hover:bg-red-600"
                 >
                   Delete Task
@@ -992,6 +1190,7 @@ const MainFeature = () => {
                     type="submit"
                     className="btn btn-primary"
                   >
+                    disabled={loadingTimeEntry}
                     Add Time Entry
                   </button>
                 </div>
