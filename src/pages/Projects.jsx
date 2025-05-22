@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { fetchProjects, createProject } from '../services/projectService';
-import { 
+import { fetchProjects, createProject as createProjectService } from '../services/projectService';
+import {
   selectAllProjects, createProject, updateProject, deleteProject,
   selectAllTasks
 } from '../store';
@@ -34,12 +34,11 @@ const Projects = () => {
     color: '#4f46e5'
   });
   const [formErrors, setFormErrors] = useState({});
-  const [searchTerm, setSortOption] = useState('');
-  const [sortOption, setSearchTerm] = useState('name');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('name');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
   // Confirmation dialog state
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
@@ -102,12 +101,30 @@ const Projects = () => {
 
   const handleCreateProject = async () => {
     setIsCreating(true);
-    
+
     if (!projectForm.name.trim()) {
       toast.error('Project name is required');
       setIsCreating(false);
       return;
     }
+
+    try {
+      const newProject = await createProjectService({
+        name: projectForm.name.trim(),
+        description: projectForm.description.trim(),
+        color: projectForm.color
+      });
+      
+      toast.success('Project created successfully!');
+      resetForm();
+      // Refresh projects or update state as needed
+    } catch (error) {
+      toast.error('Failed to create project: ' + (error.message || 'Unknown error'));
+      console.error('Error creating project:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   // Filter projects based on search term
   const filteredProjects = projects.filter(project => 
@@ -149,6 +166,7 @@ const Projects = () => {
       return;
     }
     
+    if (editingProject) {
       // Update existing project
       dispatch(updateProject({
         id: editingProject,
@@ -218,9 +236,6 @@ const Projects = () => {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center">
             <FolderIcon className="mr-3 h-6 w-6 text-primary" />
-                    <button onClick={handleSubmit} disabled={isCreating} className="px-4 py-2 bg-primary text-white rounded-md">
-                      {isCreating ? 'Creating...' : 'Create Project'}
-                    </button>
           </div>
           
           <button
@@ -382,7 +397,6 @@ const Projects = () => {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="rounded-lg border border-surface-200 bg-white p-4 shadow-soft transition-shadow hover:shadow-md dark:border-surface-700 dark:bg-surface-800"
                   onClick={() => navigate(`/projects/${project.id}`)}
-                  style={{ borderLeftWidth: '4px', borderLeftColor: project.color, cursor: 'pointer' }}
                   style={{ borderLeftWidth: '4px', borderLeftColor: project.color }}
                 >
                   <div className="mb-2 flex items-start justify-between">
