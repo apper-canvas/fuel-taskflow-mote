@@ -183,9 +183,7 @@ const Projects = () => {
     // Calculate total time spent on project tasks
     let totalTime = 0;
     projectTasks.forEach(task => {
-    const completedCount = projectTasks.filter(task => task.status === 'Done').length;
-        totalTime += task.timeEntries.reduce((sum, entry) => sum + entry.duration, 0);
-      }
+      totalTime += task.timeEntries.reduce((sum, entry) => sum + entry.duration, 0);
     });
     
     return { taskCount, completedCount, totalTime };
