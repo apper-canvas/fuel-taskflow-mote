@@ -173,5 +173,6 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: false, // Disable serializable check for Date objects
     })
+});
 
 export default store;
