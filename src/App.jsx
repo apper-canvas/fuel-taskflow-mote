@@ -145,6 +145,10 @@ function App() {
     }
   };
 
+  // Move useSelector hooks to the top level
+  const isAuthenticated = useSelector(state => state.user.isAuthenticated);
+  const user = useSelector(state => state.user.user);
+
   // Don't render routes until initialization is complete
   if (!isInitialized) {
     return <div className="flex items-center justify-center h-screen bg-surface-50 dark:bg-surface-900">
@@ -156,11 +160,7 @@ function App() {
     <AuthContext.Provider value={authMethods}> 
       <div className="min-h-screen bg-surface-50 text-surface-900 transition-colors duration-300 dark:bg-surface-900 dark:text-surface-50">
       {/* Navigation - Extract isAuthenticated outside JSX to avoid conditional hook calls */}
-      {(() => {
-        const isAuthenticated = useSelector(state => state.user.isAuthenticated);
-        const user = useSelector(state => state.user.user);
-        return isAuthenticated && (
-        <nav className="fixed top-0 z-40 flex w-full items-center justify-between bg-white px-4 py-3 shadow-sm dark:bg-surface-800">
+      {isAuthenticated && (<nav className="fixed top-0 z-40 flex w-full items-center justify-between bg-white px-4 py-3 shadow-sm dark:bg-surface-800">
         <div className="flex items-center space-x-6">
           <h1 className="text-xl font-bold text-primary">TaskFlow</h1>
           <div className="flex items-center space-x-2">
@@ -210,8 +210,7 @@ function App() {
           </button>
         </div>
       </nav>
-      )
-      })()}
+      )}
       {/* Theme Toggle Button */}
       <motion.button
         onClick={toggleDarkMode}
