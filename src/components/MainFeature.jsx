@@ -231,6 +231,7 @@ const MainFeature = () => {
         dueDate: new Date(taskForm.dueDate),
         priority: taskForm.priority,
         status: taskForm.status,
+        tags: tagArray
       }));
       }));
       toast.success("New task created!");
