@@ -1,26 +1,48 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import templatesReducer from './templatesSlice';
 
-// Timer slice for tracking time
+// Timer slice for time tracking
 const timerSlice = createSlice({
   name: 'timer',
   initialState: {
     activeTimer: null,
   },
   reducers: {
+    // Start a new timer
     startTimer: (state, action) => {
       state.activeTimer = {
         taskId: action.payload.taskId,
         startTime: new Date().toISOString(),
+        isRunning: true
       };
     },
-    stopTimer: (state) => {
-      state.activeTimer = null;
+    // Pause the active timer
+    pauseTimer: (state) => {
+      if (state.activeTimer && state.activeTimer.isRunning) {
+        state.activeTimer.isRunning = false;
+        state.activeTimer.pausedAt = new Date().toISOString();
+      }
     },
-  },
+    // Resume a paused timer
+    resumeTimer: (state) => {
+      if (state.activeTimer && !state.activeTimer.isRunning) {
+        // Calculate the time that has passed since pause
+        const pauseDuration = new Date() - new Date(state.activeTimer.pausedAt);
+        delete state.activeTimer.pausedAt;
+        state.activeTimer.isRunning = true;
+      }
+    },
+    // Stop the active timer
+    stopTimer: (state, action) => {
+      if (state.activeTimer) {
+        // Do not add to history here, as we'll handle the time entry in the component
+        state.activeTimer = null;
+      }
+    }
+  }
 });
 
-// Tasks slice for managing tasks
+// Tasks slice for task management
 const tasksSlice = createSlice({
   name: 'tasks',
   initialState: [
@@ -86,7 +108,6 @@ const tasksSlice = createSlice({
       const taskId = action.payload;
       return state.filter(task => task.id !== taskId);
     },
-  },
     // Change task status
     changeTaskStatus: (state, action) => {
       const { taskId, newStatus } = action.payload;
@@ -123,11 +144,11 @@ const tasksSlice = createSlice({
     }
   }
       
-      // If there's already an active timer, stop it first
-// Export actions
-export const { startTimer, stopTimer } = timerSlice.actions;
-        const endTime = new Date().toISOString();
-export const { 
+
+// Export timer actions
+export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.actions;
+
+// Export tasks actions
   createTask, 
   updateTask, 
   deleteTask,
@@ -136,47 +157,24 @@ export const {
   deleteTimeEntry
 } = tasksSlice.actions;
         state.activeTimer.isRunning = false;
-// Selectors
+
 export const selectAllTasks = state => state.tasks;
 export const selectTaskById = (state, taskId) => 
   state.tasks.find(task => task.id === taskId);
 export const selectActiveTimer = state => state.timer.activeTimer;
     },
-// Configure the Redux store
+
 const store = configureStore({
   reducer: {
     tasks: tasksSlice.reducer,
     templates: templatesReducer,
     timer: timerSlice.reducer
   }
-});
-
-export default store;
-      if (state.activeTimer && !state.activeTimer.isRunning) {
-        // Calculate the time that has passed since pause
-        const pauseDuration = new Date() - new Date(state.activeTimer.pausedAt);
-        delete state.activeTimer.pausedAt;
-      }
-    },
-    stopTimer: (state, action) => {
-      if (state.activeTimer) {
-        // Do not add to history here, as we'll handle the time entry in the component
-        state.activeTimer = null;
-      }
-    }
-  }
-});
-
-export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.actions;
-
-// Configure the Redux store
-export const store = configureStore({
-  reducer: {
-    timer: timerSlice.reducer,
-    templates: templatesReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false, // Disable serializable check for Date objects
     })
-});
+
+export default store;
+      if (state.activeTimer && !state.activeTimer.isRunning) {
