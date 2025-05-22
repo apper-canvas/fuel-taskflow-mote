@@ -9,6 +9,7 @@ import {
 } from '../store';
 import { formatDuration } from '../utils/timeUtils';
 import { getIcon } from '../utils/iconUtils';
+import { useNavigate } from 'react-router-dom';
 
 // Icons
 const PlusIcon = getIcon('plus');
@@ -43,6 +44,7 @@ const Projects = () => {
   const projects = useSelector(selectAllProjects);
   const tasks = useSelector(selectAllTasks);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Effect to handle form editing
   const handleEditProject = (projectId) => {
@@ -356,6 +358,8 @@ const Projects = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="rounded-lg border border-surface-200 bg-white p-4 shadow-soft transition-shadow hover:shadow-md dark:border-surface-700 dark:bg-surface-800"
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                  style={{ borderLeftWidth: '4px', borderLeftColor: project.color, cursor: 'pointer' }}
                   style={{ borderLeftWidth: '4px', borderLeftColor: project.color }}
                 >
                   <div className="mb-2 flex items-start justify-between">
@@ -365,7 +369,10 @@ const Projects = () => {
                     
                     <div className="flex items-center space-x-1">
                       <button
-                        onClick={() => handleEditProject(project.id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent navigation
+                          handleEditProject(project.id);
+                        }}
                         className="rounded-md bg-surface-100 p-1.5 text-surface-700 hover:bg-surface-200 dark:bg-surface-700 dark:text-surface-300 dark:hover:bg-surface-600"
                         title="Edit project"
                       >
@@ -373,7 +380,10 @@ const Projects = () => {
                       </button>
                       
                       <button
-                        onClick={() => confirmDeleteProject(project.id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent navigation
+                          confirmDeleteProject(project.id);
+                        }}
                         className="rounded-md bg-red-100 p-1.5 text-red-700 hover:bg-red-200 
                           dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                         title="Delete project"

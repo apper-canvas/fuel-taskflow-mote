@@ -9,6 +9,7 @@ import HomePage from './pages/Home';
 import NotFound from './pages/NotFound';
 import Reports from './pages/Reports';
 import Templates from './pages/Templates';
+import ProjectDetail from './pages/ProjectDetail';
 import Projects from './pages/Projects';
 
 function App() {
@@ -97,6 +98,7 @@ function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="*" element={<NotFound />} />  
         </Routes>
       </AnimatePresence>
