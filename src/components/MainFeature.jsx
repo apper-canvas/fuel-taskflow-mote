@@ -673,16 +673,18 @@ const MainFeature = () => {
       </AnimatePresence>
       
       {/* Task List */}
-                    Tags (comma separated) 
-                    <span className="ml-1 text-xs text-surface-500 dark:text-surface-400">e.g. "design, frontend, bug"</span>
-            <h4 className="mb-1 text-lg font-medium">No tasks found</h4>
-            <p className="text-sm text-surface-500">
-              {filteredStatus !== 'All' 
-                ? `No tasks with "${filteredStatus}" status`
-                : "Create your first task by clicking the 'Add Task' button"}
-            </p>
-                    onChange={handleInputChange}
-                    className="input w-full"
+      <div className="space-y-4">
+        {getFilteredTasks().length === 0 ? (
+          <div className="rounded-lg border border-surface-200 bg-surface-50 p-4 text-center dark:border-surface-700 dark:bg-surface-800">
+            <div className="py-6">
+              <AlertCircleIcon className="mx-auto mb-3 h-10 w-10 text-surface-400" />
+              <h4 className="mb-1 text-lg font-medium">No tasks found</h4>
+              <p className="text-sm text-surface-500">
+                {filteredStatus !== 'All' 
+                  ? `No tasks with "${filteredStatus}" status`
+                  : "Create your first task by clicking the 'Add Task' button"}
+              </p>
+            </div>
           </div>
         ) : (
           getFilteredTasks().map(task => {
