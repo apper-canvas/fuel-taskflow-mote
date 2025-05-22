@@ -389,6 +389,30 @@ const Projects = () => {
                     </p>
                   )}
                   
+                  {/* Project Progress Bar */}
+                  <div className="mt-3">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-xs font-medium">Progress</span>
+                      <span className="text-xs font-medium">
+                        {taskCount > 0 
+                          ? `${Math.round((completedCount / taskCount) * 100)}%` 
+                          : '0%'}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
+                      <div 
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: taskCount > 0 ? `${(completedCount / taskCount) * 100}%` : '0%',
+                          backgroundColor: taskCount === 0 
+                            ? '#9ca3af' 
+                            : (completedCount / taskCount) < 0.3 ? '#ef4444' 
+                            : (completedCount / taskCount) < 0.7 ? '#f59e0b' 
+                            : '#10b981'
+                        }}
+                      ></div>
+                    </div>
+                  </div>
                   <div className="mt-4 flex flex-wrap items-center justify-between text-xs">
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center" title="Tasks">
