@@ -233,7 +233,6 @@ const MainFeature = () => {
         status: taskForm.status,
         tags: tagArray
       }));
-      }));
       toast.success("New task created!");
     }
     
