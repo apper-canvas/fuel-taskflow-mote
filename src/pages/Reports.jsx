@@ -21,7 +21,7 @@ const sampleTasks = [
     project: 'Website Redesign',
     timeEntries: [
       {
-  const [filteredTag, setFilteredTag] = useState('All Tags');
+        id: 101,
         id: 101,
         startTime: new Date(Date.now() - 86400000 * 3), // 3 days ago
         endTime: new Date(Date.now() - 86400000 * 3 + 7200000), // +2 hours
@@ -46,11 +46,6 @@ const sampleTasks = [
     status: 'To Do',
     tags: ['Bug', 'Frontend'],
     assignee: 'Morgan Smith',
-
-    // Apply tag filter if not "All Tags"
-    if (filteredTag !== 'All Tags') {
-      filtered = filtered.filter(task => task.tags && task.tags.includes(filteredTag));
-    }
     project: 'Mobile App',
     timeEntries: [
       {
@@ -144,7 +139,6 @@ const sampleTasks = [
       {
         id: 110,
         startTime: new Date(Date.now() - 86400000 * 3 + 10800000), // 3 days ago +3 hours
-            filteredTag={filteredTag} setFilteredTag={setFilteredTag}
         endTime: new Date(Date.now() - 86400000 * 3 + 10800000 + 14400000), // +4 hours
         duration: 14400, // 4 hours in seconds
         description: 'Writing first draft'
@@ -175,6 +169,8 @@ const Reports = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   // Extract unique projects and users for filter dropdowns
+  const [filteredTag, setFilteredTag] = useState('All Tags');
+
   const projects = ['All Projects', ...new Set(sampleTasks.map(task => task.project))];
   const users = ['All Users', ...new Set(sampleTasks.map(task => task.assignee))];
 
@@ -236,6 +232,11 @@ const Reports = () => {
         
         // Filter by user if needed
         if (selectedUser !== 'All Users' && task.assignee !== selectedUser) {
+          return false;
+        }
+        
+        // Apply tag filter if not "All Tags"
+        if (filteredTag !== 'All Tags' && (!task.tags || !task.tags.includes(filteredTag))) {
           return false;
         }
         

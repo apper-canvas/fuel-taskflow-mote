@@ -44,7 +44,6 @@ export const filterTimeEntries = (tasks, filters) => {
           ? task.tags.join(', ') 
           : '',
         priority: task.priority,
-        status: task.status,
         dueDate: task.dueDate 
           ? new Date(task.dueDate).toLocaleDateString() : '',
           status: task.status
@@ -60,10 +59,11 @@ export const filterTimeEntries = (tasks, filters) => {
 export const calculateTotalTime = (entries) => {
   return entries.reduce((total, entry) => total + entry.duration, 0);
 };
-    'Tags',
-    'Priority',
-    'Status',
 
+/**
+ * CSV headers for reports
+ */
+const CSV_HEADERS = ['Date', 'Start Time', 'End Time', 'Duration (h)', 'Task', 'Project', 'Assignee', 'Tags', 'Priority', 'Status', 'Description'];
 /**
  * Aggregate time entries by dimension (project, user, task)
  * @param {Array} entries - Time entries
@@ -72,34 +72,6 @@ export const calculateTotalTime = (entries) => {
  */
 export const aggregateTimeBy = (entries, dimension) => {
   const aggregatedData = {};
-  // If grouped by priority
-  if (filters.groupBy === 'priority') {
-    const priorityData = {};
-    
-    filteredTasks.forEach(task => {
-      const priority = task.priority || 'Unspecified';
-      if (!priorityData[priority]) {
-        priorityData[priority] = {
-          name: priority,
-          totalTime: 0,
-          totalTasks: 0,
-          completed: 0,
-          overdue: 0,
-          items: []
-        };
-      }
-      
-      const totalTime = getTotalTimeForTask(task.timeEntries);
-      
-      priorityData[priority].totalTime += totalTime;
-      priorityData[priority].totalTasks += 1;
-      priorityData[priority].completed += task.status === 'Completed' ? 1 : 0;
-      priorityData[priority].overdue += new Date(task.dueDate) < new Date() && task.status !== 'Completed' ? 1 : 0;
-      priorityData[priority].items.push({ ...task, totalTime });
-    });
-    
-    return priorityData;
-  }
   
   
   
@@ -157,6 +129,8 @@ export const prepareCSVData = (entries) => {
     'Task': entry.taskTitle,
     'Project': entry.project,
     'Assignee': entry.assignee,
+    'Tags': entry.tags || '',
+    'Priority': entry.priority || '',
     'Status': entry.status,
     'Description': entry.description || ''
   }));
@@ -182,9 +156,8 @@ export const exportToCSV = (entries, filename = 'time-report.csv') => {
   
   const csv = Papa.unparse(csvData);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  saveAs(blob, filename);
 };
-};
-
 // Helper function to sort tasks by priority
 export const sortTasksByPriority = (tasks) => {
   const priorityOrder = {
