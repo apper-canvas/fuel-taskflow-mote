@@ -609,7 +609,7 @@ const MainFeature = () => {
             >
               <option value="All">All</option>
               {STATUSES.map(status => (
-                <option key={status} value={status}>{status}</option>
+                <option key={`status-filter-${status}`} value={status}>{status}</option>
               ))}
             </select>
           </div>
@@ -627,7 +627,7 @@ const MainFeature = () => {
             >
               <option value="All Projects">All Projects</option>
               {projects.map(project => (
-                <option key={project.id} value={project.name}>{project.name}</option>
+                <option key={`project-filter-${project.id}`} value={project.name}>{project.name}</option>
               ))}
             </select>
           </div>
@@ -696,7 +696,7 @@ const MainFeature = () => {
                   >
                     <option value="">Select a template (optional)</option>
                     {templates.map(template => (
-                      <option key={template.id} value={template.id}>{template.title}</option>
+                      <option key={`template-${template.id}`} value={template.id}>{template.title}</option>
                     ))}
                   </select>
                 </div>
@@ -736,7 +736,7 @@ const MainFeature = () => {
                   >
                     <option value="">No Project</option>
                     {projects.map(project => (
-                      <option key={project.id} value={project.id}>{project.name}</option>
+                      <option key={`project-${project.id}`} value={project.id}>{project.name}</option>
                     ))}
                   </select>
                 </div>
@@ -797,7 +797,7 @@ const MainFeature = () => {
                     className="input w-full"
                   >
                     {PRIORITIES.map(priority => (
-                      <option key={priority} value={priority}>{priority}</option>
+                      <option key={`priority-${priority}`} value={priority}>{priority}</option>
                     ))}
                   </select>
                 </div>
@@ -815,7 +815,7 @@ const MainFeature = () => {
                     className="input w-full"
                   >
                     {STATUSES.map(status => (
-                      <option key={status} value={status}>{status}</option>
+                      <option key={`status-${status}`} value={status}>{status}</option>
                     ))}
                   </select>
                 </div>
@@ -941,7 +941,7 @@ const MainFeature = () => {
                   <div className="mb-3 flex flex-wrap gap-2">
                     {task.tags.map((tag, index) => (
                       <span 
-                        key={index}
+                        key={`${task.id}-tag-${index}-${tag}`}
                         className="flex items-center rounded-full bg-surface-100 px-2 py-1 text-xs text-surface-700 dark:bg-surface-700 dark:text-surface-300"
                       >
                         <TagIcon className="mr-1 h-3 w-3" />
@@ -1004,7 +1004,7 @@ const MainFeature = () => {
                   {task.timeEntries && task.timeEntries.length > 0 ? (
                     <div className="max-h-40 overflow-y-auto">
                       {task.timeEntries.map((entry) => (
-                        <div key={entry.id} className="mb-1 flex items-center justify-between border-b border-surface-100 pb-1 text-xs dark:border-surface-700">
+                        <div key={`time-entry-${task.id}-${entry.id}`} className="mb-1 flex items-center justify-between border-b border-surface-100 pb-1 text-xs dark:border-surface-700">
                           <div>
                             <div>{format(new Date(entry.startTime), 'MMM d, h:mm a')} - {format(new Date(entry.endTime), 'h:mm a')}</div>
                             <div className="text-surface-500 dark:text-surface-400">
@@ -1037,6 +1037,7 @@ const MainFeature = () => {
                     {task.status !== 'Done' && (
                       <button 
                         onClick={() => handleStatusChange(task.id, 'Done')}
+                        key={`mark-done-${task.id}`}
                         title="Mark as completed"
                       >
                         <CheckIcon className="h-3.5 w-3.5" />
