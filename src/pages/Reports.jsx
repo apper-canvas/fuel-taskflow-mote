@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { format, subDays, startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { formatDuration } from '../utils/timeUtils';
-import { formatDuration } from '../utils/timeUtils';
 import ReactApexChart from 'react-apexcharts';
 import { exportToCSV } from '../utils/reportingUtils';
 import { timeEntryService } from '../services/timeEntryService';
 import { taskService } from '../services/taskService';
 import { projectService } from '../services/projectService';
 import { saveAs } from 'file-saver';
-// State for data loading and filtering
 import { toast } from 'react-toastify';
-];
+import { BarChart2, Filter, X, FileText, Users, TrendingUp, Calendar, Download } from 'lucide-react';
+
+// State for data loading and filtering
 
 // Time ranges for filtering
 const TIME_RANGES = {
@@ -452,7 +452,7 @@ const Reports = () => {
                   className="input w-full"
                 >
                   {getAllTags().map((tag) => (
-                    <option key={user} value={user}>{user}</option>
+                    <option key={tag} value={tag}>{tag}</option>
                   ))}
                 </select>
               </div>
