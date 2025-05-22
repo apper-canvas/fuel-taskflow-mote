@@ -5,7 +5,8 @@ import { format } from 'date-fns';
 import { useSelector, useDispatch } from 'react-redux';
 import { getIcon } from '../utils/iconUtils';
 import { formatDuration } from '../utils/timeUtils'; 
-import { TypeInfo } from '../utils/typeUtils';
+// Import TypeInfo directly without destructuring
+import TypeInfo from '../utils/typeUtils';
 import TimeTracker from './TimeTracker';
 import { stopTimer } from '../store';
 import { taskService } from '../services/taskService';

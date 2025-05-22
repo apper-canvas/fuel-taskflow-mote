@@ -4,7 +4,7 @@
  */
 
 // Field type definitions for form validation and display
-export const TypeInfo = {
+const TypeInfo = {
   // Task-related types
   task: {
     statuses: ['Todo', 'In Progress', 'Done'],
@@ -28,3 +28,5 @@ export const TypeInfo = {
     }
   }
 };
+
+export default TypeInfo;
