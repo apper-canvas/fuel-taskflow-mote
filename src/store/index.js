@@ -89,6 +89,7 @@ const tasksSlice = createSlice({
       const newTask = {
         ...action.payload,
         id: Date.now(),
+        priority: action.payload.priority || 'Medium',
         createdAt: new Date().toISOString(),
         timeEntries: []
       };
@@ -130,7 +131,6 @@ const tasksSlice = createSlice({
       const taskIndex = state.findIndex(task => task.id === taskId);
       
       if (taskIndex !== -1) {
-        priority: action.payload.priority || 'Medium',
         if (!state[taskIndex].timeEntries) {
           state[taskIndex].timeEntries = [];
         }
@@ -147,7 +147,6 @@ const tasksSlice = createSlice({
         state[taskIndex].timeEntries = state[taskIndex].timeEntries.filter(
           entry => entry.id !== entryId
         );
-        taskToUpdate.priority = action.payload.priority;
       }
     }
   }
