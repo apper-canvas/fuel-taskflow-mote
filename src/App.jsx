@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, BarChart3, Home, Bookmark } from 'lucide-react';
+import { Sun, Moon, BarChart3, Home, Bookmark, FolderKanban } from 'lucide-react';
 
 // Pages
 import HomePage from './pages/Home';
 import NotFound from './pages/NotFound';
 import Reports from './pages/Reports';
 import Templates from './pages/Templates';
+import Projects from './pages/Projects';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -67,6 +68,16 @@ function App() {
               <Bookmark className="mr-2 h-4 w-4" />
               Templates
             </Link>
+            <Link
+              to="/projects" 
+              className={`flex items-center rounded-md px-3 py-2 text-sm ${
+                pathname === '/projects' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'
+              }`}
+            >
+              <FolderKanban className="mr-2 h-4 w-4" />
+              Projects
+            </Link>
+            </Link>
           </div>
         </div>
       </nav>
@@ -86,6 +97,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/templates" element={<Templates />} />
+          <Route path="/projects" element={<Projects />} />
           <Route path="*" element={<NotFound />} />  
         </Routes>
       </AnimatePresence>

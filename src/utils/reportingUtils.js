@@ -65,6 +65,9 @@ export const aggregateTimeBy = (entries, dimension) => {
   
   entries.forEach(entry => {
     let key;
+    if (!entry) {
+      return; // Skip undefined entries
+    }
     switch (dimension) {
       case 'project':
         key = entry.project;
@@ -81,9 +84,15 @@ export const aggregateTimeBy = (entries, dimension) => {
       case 'date':
         key = format(new Date(entry.startTime), 'yyyy-MM-dd');
         break;
+      case 'projectId':
+        key = entry.projectId ? entry.projectId.toString() : 'No Project';
+        break;
       default:
         key = entry.project;
     }
+    
+    // Default key if undefined
+    key = key || 'Unspecified';
     
     if (!aggregatedData[key]) {
       aggregatedData[key] = 0;

@@ -50,6 +50,8 @@ const tasksSlice = createSlice({
       id: 1,
       title: 'Design new dashboard layout',
       description: 'Create wireframes and mockups for the new analytics dashboard',
+      projectId: 1,
+      project: 'Website Redesign',
       dueDate: new Date(Date.now() + 86400000 * 3), // 3 days from now
       priority: 'High',
       status: 'In Progress',
@@ -60,6 +62,8 @@ const tasksSlice = createSlice({
       id: 2,
       title: 'Fix search functionality',
       description: 'Debug and resolve issues with the search feature in the app',
+      projectId: 2,
+      project: 'Bug Fixes',
       dueDate: new Date(Date.now() + 86400000), // 1 day from now
       priority: 'Urgent',
       status: 'To Do',
@@ -73,6 +77,8 @@ const tasksSlice = createSlice({
       dueDate: new Date(Date.now() + 86400000 * 2), // 2 days from now
       priority: 'Medium',
       status: 'To Do',
+      projectId: 3,
+      project: 'Team Management',
       tags: ['Meeting', 'Planning'],
       timeEntries: []
     }
@@ -145,6 +151,66 @@ const tasksSlice = createSlice({
   }
 });
 
+// Projects slice for project management
+const projectsSlice = createSlice({
+  name: 'projects',
+  initialState: [
+    {
+      id: 1,
+      name: 'Website Redesign',
+      description: 'Complete overhaul of the company website with new design and functionality',
+      color: '#4f46e5',
+      createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+    },
+    {
+      id: 2,
+      name: 'Bug Fixes',
+      description: 'Address critical bugs in the production application',
+      color: '#ef4444',
+      createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    },
+    {
+      id: 3,
+      name: 'Team Management',
+      description: 'Activities related to team coordination and management',
+      color: '#10b981',
+      createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    }
+  ],
+  reducers: {
+    // Create a new project
+    createProject: (state, action) => {
+      const newProject = {
+        ...action.payload,
+        id: Date.now(),
+        createdAt: new Date().toISOString()
+      };
+      state.push(newProject);
+    },
+    
+    // Update an existing project
+    updateProject: (state, action) => {
+      const { id, ...updatedFields } = action.payload;
+      const projectIndex = state.findIndex(project => project.id === id);
+      
+      if (projectIndex !== -1) {
+        state[projectIndex] = { 
+          ...state[projectIndex], 
+          ...updatedFields,
+          updatedAt: new Date().toISOString() 
+        };
+      }
+    },
+    
+    // Delete a project
+    deleteProject: (state, action) => {
+      const projectId = action.payload;
+      return state.filter(project => project.id !== projectId);
+    }
+  }
+});
+
+
 
 // Export timer actions
 export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.actions;
@@ -159,16 +225,28 @@ export const {
   deleteTimeEntry
 } = tasksSlice.actions;
 
+// Export projects actions
+export const {
+  createProject,
+  updateProject,
+  deleteProject
+} = projectsSlice.actions;
+
 export const selectAllTasks = state => state.tasks;
 export const selectTaskById = (state, taskId) => 
   state.tasks.find(task => task.id === taskId);
 export const selectActiveTimer = state => state.timer.activeTimer;
 
+export const selectAllProjects = state => state.projects;
+export const selectProjectById = (state, projectId) => 
+  state.projects.find(project => project.id === projectId);
+
 const store = configureStore({
   reducer: {
     tasks: tasksSlice.reducer,
     templates: templatesReducer,
-    timer: timerSlice.reducer
+    timer: timerSlice.reducer,
+    projects: projectsSlice.reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

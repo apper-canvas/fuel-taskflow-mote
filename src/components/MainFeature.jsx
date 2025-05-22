@@ -9,7 +9,8 @@ import { formatDuration } from '../utils/timeUtils';
 import TimeTracker from './TimeTracker';
 import { 
   selectAllTasks, createTask, updateTask, deleteTask, 
-  changeTaskStatus, addTimeEntry, deleteTimeEntry, stopTimer 
+  changeTaskStatus, addTimeEntry, deleteTimeEntry, stopTimer,
+  selectAllProjects
 } from '../store';
 
 // Icons
@@ -49,11 +50,13 @@ const MainFeature = () => {
   // State for tasks management
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [filteredStatus, setFilteredStatus] = useState('All');
+  const [filteredProject, setFilteredProject] = useState('All Projects');
   const [sortOption, setSortOption] = useState('dueDate');
   const [editingTask, setEditingTask] = useState(null);
   
   // Form state
   const [taskForm, setTaskForm] = useState({
+    projectId: '',
     templateId: '', 
     dueDate: format(new Date(Date.now() + 86400000), 'yyyy-MM-dd'), // Tomorrow as default
     project: '',
@@ -64,6 +67,7 @@ const MainFeature = () => {
 
   // Redux state
   const tasks = useSelector(selectAllTasks);
+  const projects = useSelector(selectAllProjects);
   const templates = useSelector(selectAllTemplates);
   const activeTimer = useSelector(state => state.timer.activeTimer);
   const dispatch = useDispatch();
@@ -91,9 +95,11 @@ const MainFeature = () => {
         setTaskForm({
           title: taskToEdit.title,
           description: taskToEdit.description,
+          projectId: taskToEdit.projectId?.toString() || '',
           dueDate: format(new Date(taskToEdit.dueDate), 'yyyy-MM-dd'),
           priority: taskToEdit.priority,
           status: taskToEdit.status,
+          project: taskToEdit.project || '',
           tags: taskToEdit.tags.join(', ')
         });
         setShowTaskForm(true);
@@ -109,6 +115,12 @@ const MainFeature = () => {
     if (filteredStatus !== 'All') {
       filtered = filtered.filter(task => task.status === filteredStatus);
     }
+
+    // Apply project filter if not "All Projects"
+    if (filteredProject !== 'All Projects') {
+      filtered = filtered.filter(task => task.project === filteredProject);
+    }
+    
     
     // Apply sorting
     return filtered.sort((a, b) => {
@@ -146,6 +158,7 @@ const MainFeature = () => {
           ...prev,
           templateId: value,
           title: selectedTemplate.title,
+          projectId: selectedTemplate.projectId || prev.projectId,
           description: selectedTemplate.description,
           priority: selectedTemplate.priority,
           status: selectedTemplate.status,
@@ -173,7 +186,7 @@ const MainFeature = () => {
     }
     
     // Reset template selection if editing fields that would be set by a template
-    if (['title', 'description', 'status', 'priority', 'tags'].includes(name) && taskForm.templateId) {
+    if (['title', 'description', 'status', 'priority', 'tags', 'projectId'].includes(name) && taskForm.templateId) {
       setTaskForm(prev => ({ ...prev, templateId: '' }));
     }
   };
@@ -208,14 +221,24 @@ const MainFeature = () => {
       ? taskForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '')
       : [];
     
+    // Set project name from selected project ID if available
+    let projectName = taskForm.project;
+    if (taskForm.projectId) {
+      const selectedProject = projects.find(p => p.id.toString() === taskForm.projectId);
+      if (selectedProject) {
+        projectName = selectedProject.name;
+      }
+    }
+    
     // Update or create task
     if (editingTask) {
       // Update existing task
       dispatch(updateTask({
         id: editingTask,
         title: taskForm.title,
-        project: taskForm.project || '',
+        projectId: taskForm.projectId ? parseInt(taskForm.projectId) : null,
         description: taskForm.description,
+        project: projectName || '',
         dueDate: new Date(taskForm.dueDate),
         priority: taskForm.priority,
         status: taskForm.status,
@@ -226,8 +249,9 @@ const MainFeature = () => {
       // Create new task
       dispatch(createTask({
         title: taskForm.title,
-        project: taskForm.project || '',
+        projectId: taskForm.projectId ? parseInt(taskForm.projectId) : null,
         description: taskForm.description,
+        project: projectName || '',
         dueDate: new Date(taskForm.dueDate),
         priority: taskForm.priority,
         status: taskForm.status,
@@ -243,6 +267,7 @@ const MainFeature = () => {
   // Reset form to defaults
   const resetForm = () => {
     setTaskForm({
+      projectId: '',
       templateId: '',
       title: '',
       description: '',
@@ -402,6 +427,25 @@ const MainFeature = () => {
               ))}
             </select>
           </div>
+
+          {/* Project Filter */}
+          <div className="flex items-center space-x-2">
+            <label htmlFor="projectFilter" className="text-sm font-medium text-surface-600 dark:text-surface-400">
+              Project:
+            </label>
+            <select
+              id="projectFilter"
+              value={filteredProject}
+              onChange={(e) => setFilteredProject(e.target.value)}
+              className="rounded-md border border-surface-200 bg-white py-1 pl-3 pr-8 text-sm focus:ring-2 focus:ring-primary dark:border-surface-700 dark:bg-surface-800"
+            >
+              <option value="All Projects">All Projects</option>
+              {projects.map(project => (
+                <option key={project.id} value={project.name}>{project.name}</option>
+              ))}
+            </select>
+          </div>
+          
           
           {/* Sort Options */}
           <div className="flex items-center space-x-2">
@@ -493,18 +537,33 @@ const MainFeature = () => {
                 </div>
                 
                 {/* Project */}
-                <div>
-                  <label htmlFor="project" className="mb-1 block text-sm font-medium">
+                <div className="col-span-full md:col-span-1">
+                  <label htmlFor="projectId" className="mb-1 block text-sm font-medium">
                     Project
                   </label>
-                  <input
-                    type="text"
-                    id="project"
-                    name="project"
-                    value={taskForm.project}
+                  <select
+                    id="projectId"
+                    name="projectId"
+                    value={taskForm.projectId}
                     onChange={handleInputChange}
-                    className="input w-full" />
+                    className="input w-full"
+                  >
+                    <option value="">No Project</option>
+                    {projects.map(project => (
+                      <option key={project.id} value={project.id}>{project.name}</option>
+                    ))}
+                  </select>
                 </div>
+
+                {/* Custom Project Name (only if no project selected) */}
+                {!taskForm.projectId && (
+                  <div className="col-span-full md:col-span-1">
+                    <label htmlFor="project" className="mb-1 block text-sm font-medium">Custom Project Name</label>
+                    <input type="text" id="project" name="project" value={taskForm.project} 
+                      onChange={handleInputChange} className="input w-full" 
+                      placeholder="Enter custom project name" />
+                  </div>
+                )}
                 {/* Description */}
                 <div className="col-span-full">
                   <label htmlFor="description" className="mb-1 block text-sm font-medium">
@@ -649,6 +708,19 @@ const MainFeature = () => {
                     task.status === 'Completed' ? 'text-green-800 dark:text-green-400' : ''
                   }`}>
                     {task.title}
+                    
+                    {/* Project Tag if exists */}
+                    {task.project && (
+                      <span 
+                        className="ml-2 inline-flex items-center rounded-full bg-primary-light/20 px-2 py-0.5 text-xs text-primary-dark dark:bg-primary-dark/30 dark:text-primary-light"
+                        style={{
+                          backgroundColor: task.projectId && projects.find(p => p.id === task.projectId)?.color + '20',
+                          color: task.projectId && projects.find(p => p.id === task.projectId)?.color
+                        }}
+                      >
+                        {task.project}
+                      </span>
+                    )}
                   </h4>
                   
                   <div className="flex items-center space-x-2">
