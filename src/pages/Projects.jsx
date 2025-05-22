@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { fetchProjects, createProject as createProjectService } from '../services/projectService';
 import {
-  selectAllProjects, createProject, updateProject, deleteProject,
-  selectAllTasks
-} from '../store';
+  selectAllProjects, createProject, updateProject, deleteProject, setProjects
+} from '../store/projectsSlice';
 import { formatDuration } from '../utils/timeUtils';
 import { getIcon } from '../utils/iconUtils';
+import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { format } from 'date-fns';
@@ -45,7 +45,8 @@ const Projects = () => {
 
   // Redux state
   const projects = useSelector(selectAllProjects);
-  const tasks = useSelector(selectAllTasks);
+  // Since we don't have a tasksSlice yet, use an empty array
+  const tasks = [];
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -54,8 +55,11 @@ const Projects = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchProjects();
-      setProjects(data);
+      // Fetch projects from service
+      const projectsData = await fetchProjects();
+      // Update Redux store with fetched projects
+      dispatch(setProjects(projectsData));
+      return projectsData;
     } catch (err) {
       setError('Failed to load projects. Please try again.');
       toast.error('Failed to load projects');
@@ -64,6 +68,12 @@ const Projects = () => {
       setIsLoading(false);
     }
   };
+
+  // Use useEffect to load projects when component mounts
+  useEffect(() => {
+    loadProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleEditProject = (projectId) => {
     const projectToEdit = projects.find(project => project.id === projectId);
@@ -115,18 +125,18 @@ const Projects = () => {
         color: projectForm.color
       });
       
+      // If successful, update Redux store
+      dispatch(createProject(newProject));
+      
       toast.success('Project created successfully!');
       resetForm();
-      // Refresh projects or update state as needed
+      
     } catch (error) {
       toast.error('Failed to create project: ' + (error.message || 'Unknown error'));
       console.error('Error creating project:', error);
     } finally {
       setIsCreating(false);
     }
-  };
-
-  // Filter projects based on search term
   const filteredProjects = projects.filter(project => 
     (project.Name || '').toLowerCase().includes(searchTerm.toLowerCase()));
 

@@ -1,6 +1,7 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import templatesReducer from './templatesSlice';
 import userReducer from './userSlice';
+import projectsReducer from './projectsSlice';
 
 // Timer slice for time tracking
 const timerSlice = createSlice({
@@ -50,6 +51,16 @@ const timerSlice = createSlice({
 // Export timer actions
 export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.actions;
 
+// Export project actions and selectors from projectsSlice
+export {
+  createProject,
+  updateProject,
+  deleteProject,
+  setProjects,
+  selectAllProjects,
+  selectProjectById
+} from './projectsSlice';
+
 // Selectors
 export const selectActiveTimer = state => state.timer.activeTimer;
 
@@ -57,7 +68,8 @@ const store = configureStore({
   reducer: {
     templates: templatesReducer,
     timer: timerSlice.reducer,
-    user: userReducer
+    user: userReducer,
+    projects: projectsReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
