@@ -77,7 +77,6 @@ function App() {
               <FolderKanban className="mr-2 h-4 w-4" />
               Projects
             </Link>
-            </Link>
           </div>
         </div>
       </nav>
