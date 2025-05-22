@@ -854,7 +854,7 @@ const MainFeature = () => {
                   {savingTask ? (
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                   ) : (
-                    <XIcon className="mr-1 h-4 w-4" />
+                    <CheckIcon className="mr-1 h-4 w-4" />
                   )}
                   
                   {editingTask ? "Update Task" : "Create Task"}
@@ -869,8 +869,6 @@ const MainFeature = () => {
                       <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                       <span key="saving-text">{editingTask ? "Updating..." : "Creating..."}</span>
                     </div>
-                  ) : (<span key="action-text">
-                  editingTask ? "Update Task" : "Create Task")}
       {/* Task List */}
       <div className="space-y-4">
         {getFilteredTasks().length === 0 ? (
@@ -1189,10 +1187,9 @@ const MainFeature = () => {
                   <button
                     type="submit"
                     className="btn btn-primary"
-                  >
                     disabled={loadingTimeEntry}
+                  >
                     Add Time Entry
-                    <span key="time-entry-label">Add Time Entry</span>
                   </button>
                 </div>
               </form>
