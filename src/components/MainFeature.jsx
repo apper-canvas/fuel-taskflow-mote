@@ -55,13 +55,15 @@ const MainFeature = () => {
   
   // Form state
   const [taskForm, setTaskForm] = useState({
+    title: '',
+    description: '',
     projectId: '',
     templateId: '', 
     dueDate: format(new Date(Date.now() + 86400000), 'yyyy-MM-dd'), // Tomorrow as default
     project: '',
     priority: 'Medium',
     status: 'Todo',
-    tags: ''
+    tags: '',
   });
 
   // Redux state
