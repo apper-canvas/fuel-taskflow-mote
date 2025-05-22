@@ -7,7 +7,7 @@ import { Bookmark, Edit, Trash2, Plus, Check, X, Filter, AlertCircle, Tag, Clipb
 import { selectAllTemplates, createTemplate, updateTemplate, deleteTemplate } from '../store/templatesSlice';
 
 const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
-const STATUSES = ['To Do', 'In Progress', 'In Review', 'Completed'];
+const STATUSES = ['Todo', 'In Progress', 'Done'];
 
 // Priority colors for visual representation
 const PRIORITY_COLORS = {
@@ -19,10 +19,9 @@ const PRIORITY_COLORS = {
 
 // Status colors for visual representation
 const STATUS_COLORS = {
-  'To Do': 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300',
+  'Todo': 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300',
   'In Progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  'In Review': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  'Completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  'Done': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
 };
 
 const Templates = () => {
@@ -42,7 +41,7 @@ const Templates = () => {
     description: '',
     project: '',
     priority: 'Medium',
-    status: 'To Do',
+    status: 'Todo',
     tags: ''
   });
   
@@ -173,7 +172,7 @@ const Templates = () => {
       description: '',
       project: '',
       priority: 'Medium',
-      status: 'To Do',
+      status: 'Todo',
       tags: ''
     });
     setShowTemplateForm(false);
