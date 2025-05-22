@@ -1006,7 +1006,7 @@ const MainFeature = () => {
                       {task.timeEntries.map((entry) => (
                         <div key={entry.id} className="mb-1 flex items-center justify-between border-b border-surface-100 pb-1 text-xs dark:border-surface-700">
                           <div>
-                            <div key={`time-${entry.id}`}>{format(new Date(entry.startTime), 'MMM d, h:mm a')} - {format(new Date(entry.endTime), 'h:mm a')}</div>
+                            <div>{format(new Date(entry.startTime), 'MMM d, h:mm a')} - {format(new Date(entry.endTime), 'h:mm a')}</div>
                             <div className="text-surface-500 dark:text-surface-400">
                               {formatDuration(entry.duration)}
                               {entry.description && ` • ${entry.description}`}
