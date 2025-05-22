@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { toast } from 'react-toastify';
 import { fetchProjects, createProject } from '../services/projectService';
 import { 
   selectAllProjects, createProject, updateProject, deleteProject,
@@ -10,19 +9,19 @@ import {
 import { formatDuration } from '../utils/timeUtils';
 import { getIcon } from '../utils/iconUtils';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { format } from 'date-fns';
 
 // Icons
 const PlusIcon = getIcon('plus');
 const CheckIcon = getIcon('check');
 const XIcon = getIcon('x');
 const AlertCircleIcon = getIcon('alert-circle');
-  const [projects, setProjects] = useState([]);
 const TrashIcon = getIcon('trash-2');
 const FolderIcon = getIcon('folder');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
 const FolderPlusIcon = getIcon('folder-plus');
+const EditIcon = getIcon('edit');
+const ClockIcon = getIcon('clock');
 const ListIcon = getIcon('list');
 
 const Projects = () => {
@@ -30,24 +29,16 @@ const Projects = () => {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [projectForm, setProjectForm] = useState({
-    // Fetch projects from the database
-    const loadProjects = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data = await fetchProjects();
-        setProjects(data);
-      } catch (err) {
-        setError('Failed to load projects. Please try again.');
-        toast.error('Failed to load projects');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadProjects();
+    name: '',
+    description: '',
+    color: '#4f46e5'
   });
+  const [formErrors, setFormErrors] = useState({});
+  const [searchTerm, setSortOption] = useState('');
+  const [sortOption, setSearchTerm] = useState('name');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   // Confirmation dialog state
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -60,49 +51,43 @@ const Projects = () => {
   const navigate = useNavigate();
 
   // Effect to handle form editing
+  const loadProjects = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchProjects();
+      setProjects(data);
+    } catch (err) {
+      setError('Failed to load projects. Please try again.');
+      toast.error('Failed to load projects');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleEditProject = (projectId) => {
     const projectToEdit = projects.find(project => project.id === projectId);
     if (projectToEdit) {
       setProjectForm({
-  const handleSubmit = async () => {
-    setIsCreating(true);
-    
+        name: projectToEdit.name,
         description: projectToEdit.description,
-      toast.error('Project name is required');
-      setIsCreating(false);
+        color: projectToEdit.color || '#4f46e5'
       });
       setEditingProject(projectId);
       setShowProjectForm(true);
-    try {
-      // Create project in the database using the service
-      const projectData = {
-        name: newProject.name,
-        description: newProject.description,
-        color: newProject.color,
-        tags: newProject.tags
-      };
-      
-      const createdProject = await createProject(projectData);
-      
-      // Update local state with the new project
-      setProjects(prevProjects => [createdProject, ...prevProjects]);
-      
-      // Close modal and reset form
-      setIsNewProjectModalOpen(false);
-      setNewProject({
-        name: '',
-        description: '',
-        color: projectColors[0],
-        tags: ''
-      });
-      
-      toast.success('Project created successfully');
-    } catch (err) {
-      toast.error('Failed to create project');
-      console.error(err);
-    } finally {
-      setIsCreating(false);
     }
+  };
+
+  // Get filtered and sorted projects
+  const getFilteredProjects = () => {
+    // First filter by search term
+    const filtered = projects.filter(project => 
+      (project.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Then sort according to selected option
+    return filtered.sort((a, b) => {
+      if (sortOption === 'name') {
         return a.name.localeCompare(b.name);
       } else if (sortOption === 'createdAt') {
         return new Date(b.createdAt) - new Date(a.createdAt);
@@ -114,6 +99,15 @@ const Projects = () => {
       return 0;
     });
   };
+
+  const handleCreateProject = async () => {
+    setIsCreating(true);
+    
+    if (!projectForm.name.trim()) {
+      toast.error('Project name is required');
+      setIsCreating(false);
+      return;
+    }
 
   // Filter projects based on search term
   const filteredProjects = projects.filter(project => 
@@ -141,19 +135,6 @@ const Projects = () => {
     const errors = {};
     
     if (!projectForm.name.trim()) {
-      
-      {/* Loading and Error States */}
-      {isLoading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
       errors.name = 'Project name is required';
     }
     
@@ -161,17 +142,13 @@ const Projects = () => {
     return Object.keys(errors).length === 0;
   };
 
-            to={`/projects/${project.Id}`}
   const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
-              style={{ backgroundColor: project.color || '#4F46E5' }}
       return;
     }
     
-    // Update or create project
-                <h3 className="text-lg font-semibold">{project.Name}</h3>
       // Update existing project
       dispatch(updateProject({
         id: editingProject,
@@ -179,10 +156,10 @@ const Projects = () => {
         description: projectForm.description.trim(),
         color: projectForm.color
       }));
-                {(project.Tags || '').split(',').filter(Boolean).map((tag, index) => (
+      toast.success("Project updated successfully!");
     } else {
       // Create new project
-                    className="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full px-2 py-1 text-xs font-medium"
+      dispatch(createProject({
         name: projectForm.name.trim(),
         description: projectForm.description.trim(),
         color: projectForm.color
@@ -191,7 +168,7 @@ const Projects = () => {
     }
     
     // Reset form and close it
-                Created: {new Date(project.CreatedOn).toLocaleDateString()}
+    resetForm();
   };
 
   // Reset form to defaults
