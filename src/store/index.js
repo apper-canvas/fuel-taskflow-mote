@@ -149,6 +149,7 @@ const tasksSlice = createSlice({
 export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.actions;
 
 // Export tasks actions
+export const { 
   createTask, 
   updateTask, 
   deleteTask,
@@ -156,20 +157,17 @@ export const { startTimer, pauseTimer, resumeTimer, stopTimer } = timerSlice.act
   addTimeEntry,
   deleteTimeEntry
 } = tasksSlice.actions;
-        state.activeTimer.isRunning = false;
 
 export const selectAllTasks = state => state.tasks;
 export const selectTaskById = (state, taskId) => 
   state.tasks.find(task => task.id === taskId);
 export const selectActiveTimer = state => state.timer.activeTimer;
-    },
 
 const store = configureStore({
   reducer: {
     tasks: tasksSlice.reducer,
     templates: templatesReducer,
     timer: timerSlice.reducer
-  }
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -177,4 +175,3 @@ const store = configureStore({
     })
 
 export default store;
-      if (state.activeTimer && !state.activeTimer.isRunning) {
