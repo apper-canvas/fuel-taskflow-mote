@@ -864,11 +864,6 @@ const MainFeature = () => {
           </motion.div>
         )}
       </AnimatePresence>
-                  {savingTask ? (
-                    <div className="flex items-center">
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                      <span key="saving-text">{editingTask ? "Updating..." : "Creating..."}</span>
-                    </div>
       {/* Task List */}
       <div className="space-y-4">
         {getFilteredTasks().length === 0 ? (
