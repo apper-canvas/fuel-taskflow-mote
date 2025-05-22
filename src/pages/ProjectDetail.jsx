@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { motion } from 'framer-motion';
+import { projectService } from '/src/services/projectService.js';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { 
@@ -106,11 +106,14 @@ const ProjectDetail = () => {
               }}
               className="btn btn-outline"
             >
-              Back to Projects
-            </button>
+    try {
+      await projectService.deleteProject(id);
+      toast.success('Project deleted successfully');
+      navigate('/projects');
+    } catch (error) {
+      toast.error('Failed to delete project: ' + error.message);
+    }
             <button
-              onClick={() => {
-                navigate('/projects');
                 setTimeout(() => {
                   // Trigger edit on the project
                   const editButton = document.querySelector(`#project-${projectId} .edit-button`);
