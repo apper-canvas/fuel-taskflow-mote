@@ -1,5 +1,6 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import templatesReducer from './templatesSlice';
+import userReducer from './userSlice';
 
 // Timer slice for time tracking
 const timerSlice = createSlice({
@@ -246,7 +247,8 @@ const store = configureStore({
     tasks: tasksSlice.reducer,
     templates: templatesReducer,
     timer: timerSlice.reducer,
-    projects: projectsSlice.reducer
+    projects: projectsSlice.reducer,
+    user: userReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
