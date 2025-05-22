@@ -841,7 +841,7 @@ const MainFeature = () => {
                     {/* Status Actions - only show if not completed */}
                     {/* Status Actions - only show if not done */}
                     {task.status !== 'Done' && (
-                        onClick={() => handleStatusChange(task.id, 'Completed')}
+                      <button 
                         onClick={() => handleStatusChange(task.id, 'Done')}
                         title="Mark as completed"
                       >
