@@ -867,9 +867,9 @@ const MainFeature = () => {
                   {savingTask ? (
                     <div className="flex items-center">
                       <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                      <span>{editingTask ? "Updating..." : "Creating..."}</span>
+                      <span key="saving-text">{editingTask ? "Updating..." : "Creating..."}</span>
                     </div>
-                  ) : (
+                  ) : (<span key="action-text">
                   editingTask ? "Update Task" : "Create Task")}
       {/* Task List */}
       <div className="space-y-4">
@@ -1013,7 +1013,7 @@ const MainFeature = () => {
                       {task.timeEntries.map((entry) => (
                         <div key={entry.id} className="mb-1 flex items-center justify-between border-b border-surface-100 pb-1 text-xs dark:border-surface-700">
                           <div>
-                            <div>{format(new Date(entry.startTime), 'MMM d, h:mm a')} - {format(new Date(entry.endTime), 'h:mm a')}</div>
+                            <div key={`time-${entry.id}`}>{format(new Date(entry.startTime), 'MMM d, h:mm a')} - {format(new Date(entry.endTime), 'h:mm a')}</div>
                             <div className="text-surface-500 dark:text-surface-400">
                               {formatDuration(entry.duration)}
                               {entry.description && ` • ${entry.description}`}
@@ -1192,6 +1192,7 @@ const MainFeature = () => {
                   >
                     disabled={loadingTimeEntry}
                     Add Time Entry
+                    <span key="time-entry-label">Add Time Entry</span>
                   </button>
                 </div>
               </form>
