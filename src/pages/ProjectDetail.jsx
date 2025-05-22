@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { projectService } from '/src/services/projectService.js';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
-import { 
-  selectProjectById, selectAllTasks, updateProject, deleteProject
-} from '../store';
+import { motion } from 'framer-motion';
+import { startTimer, pauseTimer, resumeTimer, stopTimer } from '../store';
 import { formatDuration } from '../utils/timeUtils';
 import { getIcon } from '../utils/iconUtils';
 
@@ -22,12 +21,34 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [project, setProject] = useState(null);
+  const [projectTasks, setProjectTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const projectId = parseInt(id);
-  const project = useSelector(state => selectProjectById(state, projectId));
-  const allTasks = useSelector(selectAllTasks);
-  const projectTasks = allTasks.filter(task => task.projectId === projectId);
-  
+
+  // Fetch project data
+  useEffect(() => {
+    const fetchProjectData = async () => {
+      try {
+        setLoading(true);
+        const projectData = await projectService.getProjectById(projectId);
+        setProject(projectData);
+        
+        // Here we would normally fetch tasks using taskService
+        // For now we'll use an empty array since task data isn't fully implemented
+        setProjectTasks([]);
+        
+        setLoading(false);
+      } catch (error) {
+        toast.error('Failed to load project: ' + error.message);
+        setLoading(false);
+      }
+    };
+    
+    fetchProjectData();
+  }, [projectId]);
+
   // State for delete confirmation
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   
@@ -71,10 +92,15 @@ const ProjectDetail = () => {
   });
   
   // Handle project deletion
-  const handleDeleteProject = () => {
-    dispatch(deleteProject(projectId));
-    toast.success("Project deleted successfully!");
-    navigate('/projects');
+  const handleDeleteProject = async () => {
+    try {
+      await projectService.deleteProject(projectId);
+      toast.success('Project deleted successfully');
+      navigate('/projects');
+    } catch (error) {
+      toast.error('Failed to delete project: ' + error.message);
+      setShowDeleteConfirmation(false);
+    }
   };
   
   return (
@@ -98,27 +124,20 @@ const ProjectDetail = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => {
-                navigate('/projects');
-                setTimeout(() => {
-                  const projectElement = document.getElementById(`project-${projectId}`);
-                  if (projectElement) projectElement.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
+                navigate('/projects', { state: { scrollToProject: projectId } });
               }}
               className="btn btn-outline"
+              aria-label="Back to projects list"
             >
-    try {
-      await projectService.deleteProject(id);
-      toast.success('Project deleted successfully');
-      navigate('/projects');
-    } catch (error) {
-      toast.error('Failed to delete project: ' + error.message);
-    }
+              Back
+            </button>
             <button
-                setTimeout(() => {
-                  // Trigger edit on the project
-                  const editButton = document.querySelector(`#project-${projectId} .edit-button`);
-                  if (editButton) editButton.click();
-                }, 100);
+              onClick={() => {
+                navigate('/projects', { 
+                  state: { 
+                    editProject: projectId 
+                  } 
+                });
               }}
               className="btn btn-outline"
               aria-label="Edit project"
