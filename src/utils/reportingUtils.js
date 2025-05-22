@@ -62,6 +62,36 @@ export const calculateTotalTime = (entries) => {
  */
 export const aggregateTimeBy = (entries, dimension) => {
   const aggregatedData = {};
+  // If grouped by priority
+  if (filters.groupBy === 'priority') {
+    const priorityData = {};
+    
+    filteredTasks.forEach(task => {
+      const priority = task.priority || 'Unspecified';
+      if (!priorityData[priority]) {
+        priorityData[priority] = {
+          name: priority,
+          totalTime: 0,
+          totalTasks: 0,
+          completed: 0,
+          overdue: 0,
+          items: []
+        };
+      }
+      
+      const totalTime = getTotalTimeForTask(task.timeEntries);
+      
+      priorityData[priority].totalTime += totalTime;
+      priorityData[priority].totalTasks += 1;
+      priorityData[priority].completed += task.status === 'Completed' ? 1 : 0;
+      priorityData[priority].overdue += new Date(task.dueDate) < new Date() && task.status !== 'Completed' ? 1 : 0;
+      priorityData[priority].items.push({ ...task, totalTime });
+    });
+    
+    return priorityData;
+  }
+  
+  
   
   entries.forEach(entry => {
     let key;
@@ -142,7 +172,21 @@ export const exportToCSV = (entries, filename = 'time-report.csv') => {
   
   const csv = Papa.unparse(csvData);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  saveAs(blob, filename);
+};
+};
+
+// Helper function to sort tasks by priority
+export const sortTasksByPriority = (tasks) => {
+  const priorityOrder = {
+    'Urgent': 0,
+    'High': 1,
+    'Medium': 2,
+    'Low': 3,
+    'Unspecified': 4
+  };
+  
+  return [...tasks].sort((a, b) => 
+    priorityOrder[a.priority || 'Unspecified'] - priorityOrder[b.priority || 'Unspecified']);
 };
 
 export default { filterTimeEntries, calculateTotalTime, aggregateTimeBy, prepareCSVData, exportToCSV };

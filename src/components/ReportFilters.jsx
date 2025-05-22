@@ -79,6 +79,7 @@ const ReportFilters = ({
       user: selectedUser
     });
   }, [dateRange, startDate, endDate, selectedProject, selectedUser, onFilterChange]);
+                  <option value="priority">Priority</option>
 
   return (
     <div className="mb-6">
