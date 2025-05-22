@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext } from 'react';
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,9 +23,10 @@ export const AuthContext = createContext(null);
 
 // Create protected route component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useSelector((state) => state.user);
-  const navigate = useNavigate();
-  return isAuthenticated ? children : navigate('/login');
+  const userState = useSelector((state) => state.user);
+  const isAuthenticated = userState.isAuthenticated;
+  
+  return isAuthenticated ? children : <Navigate to="/login" />;
 };
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -152,10 +153,13 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={authMethods}>
+    <AuthContext.Provider value={authMethods}> 
       <div className="min-h-screen bg-surface-50 text-surface-900 transition-colors duration-300 dark:bg-surface-900 dark:text-surface-50">
-      {/* Navigation */}
-      {useSelector(state => state.user.isAuthenticated) && (
+      {/* Navigation - Extract isAuthenticated outside JSX to avoid conditional hook calls */}
+      {(() => {
+        const isAuthenticated = useSelector(state => state.user.isAuthenticated);
+        const user = useSelector(state => state.user.user);
+        return isAuthenticated && (
         <nav className="fixed top-0 z-40 flex w-full items-center justify-between bg-white px-4 py-3 shadow-sm dark:bg-surface-800">
         <div className="flex items-center space-x-6">
           <h1 className="text-xl font-bold text-primary">TaskFlow</h1>
@@ -196,7 +200,7 @@ function App() {
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-surface-600 dark:text-surface-400">
-            {useSelector(state => state.user.user?.firstName)}
+            {user?.firstName}
           </span>
           <button 
             onClick={authMethods.logout}
@@ -206,7 +210,8 @@ function App() {
           </button>
         </div>
       </nav>
-      )}
+      )
+      })()}
       {/* Theme Toggle Button */}
       <motion.button
         onClick={toggleDarkMode}
@@ -230,7 +235,6 @@ function App() {
           <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
           <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
-          <Route path="/" element={<HomePage />} />  
         </Routes>
       </AnimatePresence>
 
