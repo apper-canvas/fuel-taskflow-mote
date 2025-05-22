@@ -166,6 +166,9 @@ const MainFeature = () => {
     
     // Clear error for this field when user types
     if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: undefined
       }));
     }
     
@@ -228,15 +231,7 @@ const MainFeature = () => {
         dueDate: new Date(taskForm.dueDate),
         priority: taskForm.priority,
         status: taskForm.status,
-      const newTask = {
-        id: Date.now(),
-        title: taskForm.title,
-        project: taskForm.project || '',
-        description: taskForm.description,
-        dueDate: new Date(taskForm.dueDate),
-        priority: taskForm.priority,
-        status: taskForm.status,
-        tags: tagArray,
+      }));
       }));
       toast.success("New task created!");
     }
