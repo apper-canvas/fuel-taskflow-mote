@@ -137,6 +137,8 @@ const Projects = () => {
     } finally {
       setIsCreating(false);
     }
+  };
+  
   const filteredProjects = projects.filter(project => 
     (project.Name || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -172,7 +174,7 @@ const Projects = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!validateForm() || isCreating) {
       return;
     }
     
@@ -186,12 +188,7 @@ const Projects = () => {
       }));
       toast.success("Project updated successfully!");
     } else {
-      // Create new project
-      dispatch(createProject({
-        name: projectForm.name.trim(),
-        description: projectForm.description.trim(),
-        color: projectForm.color
-      }));
+      handleCreateProject();
       toast.success("New project created!");
     }
     
