@@ -67,15 +67,6 @@ function App() {
               <Bookmark className="mr-2 h-4 w-4" />
               Templates
             </Link>
-            <Link
-              to="/templates" 
-              className={`flex items-center rounded-md px-3 py-2 text-sm ${
-                pathname === '/templates' ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-surface-100 dark:hover:bg-surface-700'
-              }`}
-            >
-              <Bookmark className="mr-2 h-4 w-4" />
-              Templates
-            </Link>
           </div>
         </div>
       </nav>
@@ -94,7 +85,6 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/templates" element={<Templates />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="*" element={<NotFound />} />  
         </Routes>

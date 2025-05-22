@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
-import { getIcon } from '../utils/iconUtils';
 import { useSelector, useDispatch } from 'react-redux';
+import { getIcon } from '../utils/iconUtils';
 import { selectAllTemplates } from '../store/templatesSlice';
 import { formatDuration } from '../utils/timeUtils'; 
 import TimeTracker from './TimeTracker';
-import { stopTimer } from '../store';
+import { 
+  selectAllTasks, createTask, updateTask, deleteTask, 
+  changeTaskStatus, addTimeEntry, deleteTimeEntry, stopTimer 
+} from '../store';
 
 // Icons
 const PlusIcon = getIcon('plus');
-const TrashIcon = getIcon('trash-2');
-const EditIcon = getIcon('edit-3');
 const CheckIcon = getIcon('check');
 const XIcon = getIcon('x');
 const AlertCircleIcon = getIcon('alert-circle');
@@ -20,6 +21,8 @@ const ClockIcon = getIcon('clock');
 const TimerIcon = getIcon('timer');
 const FlagIcon = getIcon('flag');
 const BookmarkIcon = getIcon('bookmark');
+const TrashIcon = getIcon('trash-2');
+const EditIcon = getIcon('edit-3');
 const TagIcon = getIcon('tag');
 
 // Initial task status options
@@ -42,52 +45,12 @@ const STATUS_COLORS = {
   'Completed': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
 };
 
-// Sample initial tasks
-const initialTasks = [
-  {
-    id: 1,
-    title: 'Design new dashboard layout',
-    description: 'Create wireframes and mockups for the new analytics dashboard',
-    dueDate: new Date(Date.now() + 86400000 * 3), // 3 days from now
-    priority: 'High',
-    status: 'In Progress',
-    tags: ['Design', 'UI/UX'],
-    timeEntries: []
-  },
-  {
-    id: 2,
-    title: 'Fix search functionality',
-    description: 'Debug and resolve issues with the search feature in the app',
-    dueDate: new Date(Date.now() + 86400000), // 1 day from now
-    priority: 'Urgent',
-    status: 'To Do',
-    tags: ['Bug', 'Frontend'],
-    timeEntries: []
-  },
-  {
-    id: 3,
-    title: 'Weekly team meeting',
-    description: 'Prepare agenda for the weekly team sync meeting',
-    dueDate: new Date(Date.now() + 86400000 * 2), // 2 days from now
-    priority: 'Medium',
-    status: 'To Do',
-    tags: ['Meeting', 'Planning'],
-    timeEntries: []
-  }
-];
-
 const MainFeature = () => {
   // State for tasks management
-  const [tasks, setTasks] = useState(initialTasks);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [filteredStatus, setFilteredStatus] = useState('All');
   const [sortOption, setSortOption] = useState('dueDate');
   const [editingTask, setEditingTask] = useState(null);
-  const [showTimeEntryForm, setShowTimeEntryForm] = useState(false);
-  const [selectedTaskForTimeEntry, setSelectedTaskForTimeEntry] = useState(null);
-  const activeTimer = useSelector((state) => state.timer.activeTimer);
-  const templates = useSelector(selectAllTemplates);
-  const dispatch = useDispatch();
   
   // Form state
   const [taskForm, setTaskForm] = useState({
@@ -99,6 +62,13 @@ const MainFeature = () => {
     tags: ''
   });
 
+  // Redux state
+  const tasks = useSelector(selectAllTasks);
+  const templates = useSelector(selectAllTemplates);
+  const activeTimer = useSelector(state => state.timer.activeTimer);
+  const dispatch = useDispatch();
+  const [showTimeEntryForm, setShowTimeEntryForm] = useState(false);
+  const [selectedTaskForTimeEntry, setSelectedTaskForTimeEntry] = useState(null);
   // Time entry form state
   const [timeEntryForm, setTimeEntryForm] = useState({
     hours: '0',
@@ -108,6 +78,10 @@ const MainFeature = () => {
   
   // Form validation errors
   const [formErrors, setFormErrors] = useState({});
+  
+  // Confirmation dialog state
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
   
   // Effect to handle form editing
   useEffect(() => {
@@ -141,14 +115,12 @@ const MainFeature = () => {
       if (sortOption === 'dueDate') {
         return new Date(a.dueDate) - new Date(b.dueDate);
       } else if (sortOption === 'priority') {
-      // Handle empty array
-      if (filtered.length === 0) {
-        return [];
-      }
-      
         const priorityOrder = { 'Urgent': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
-      } else if (sortOption === 'status') {
+      } 
+      
+      // Sort by status
+      if (sortOption === 'status') {
         const statusOrder = { 'To Do': 0, 'In Progress': 1, 'In Review': 2, 'Completed': 3 };
         return statusOrder[a.status] - statusOrder[b.status];
       }
@@ -194,9 +166,6 @@ const MainFeature = () => {
     
     // Clear error for this field when user types
     if (formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: ''
       }));
     }
     
@@ -239,26 +208,26 @@ const MainFeature = () => {
     // Update or create task
     if (editingTask) {
       // Update existing task
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
-          task.id === editingTask 
-            ? {
-                ...task,
-                title: taskForm.title,
-                project: taskForm.project || task.project,
-                description: taskForm.description,
-                dueDate: new Date(taskForm.dueDate),
-                priority: taskForm.priority,
-                status: taskForm.status,
-                tags: tagArray,
-                timeEntries: task.timeEntries || []
-              }
-            : task
-        )
-      );
+      dispatch(updateTask({
+        id: editingTask,
+        title: taskForm.title,
+        project: taskForm.project || '',
+        description: taskForm.description,
+        dueDate: new Date(taskForm.dueDate),
+        priority: taskForm.priority,
+        status: taskForm.status,
+        tags: tagArray
+      }));
       toast.success("Task updated successfully!");
     } else {
       // Create new task
+      dispatch(createTask({
+        title: taskForm.title,
+        project: taskForm.project || '',
+        description: taskForm.description,
+        dueDate: new Date(taskForm.dueDate),
+        priority: taskForm.priority,
+        status: taskForm.status,
       const newTask = {
         id: Date.now(),
         title: taskForm.title,
@@ -268,10 +237,7 @@ const MainFeature = () => {
         priority: taskForm.priority,
         status: taskForm.status,
         tags: tagArray,
-        timeEntries: []
-      };
-      
-      setTasks(prev => [...prev, newTask]);
+      }));
       toast.success("New task created!");
     }
     
@@ -318,8 +284,18 @@ const MainFeature = () => {
       return;
     }
     
-    addTimeEntryToTask(selectedTaskForTimeEntry, totalSeconds, timeEntryForm.description);
-    setTimeEntryForm({ hours: '0', minutes: '0', description: '' });
+    const newTimeEntry = {
+      id: Date.now(),
+      startTime: new Date(new Date().getTime() - (totalSeconds * 1000)),
+      endTime: new Date(),
+      duration: totalSeconds,
+      description: timeEntryForm.description.trim()
+    };
+    
+    dispatch(addTimeEntry({
+      taskId: selectedTaskForTimeEntry,
+      timeEntry: newTimeEntry
+    }));
     setShowTimeEntryForm(false);
     setSelectedTaskForTimeEntry(null);
     toast.success("Time entry added successfully!");
@@ -327,18 +303,23 @@ const MainFeature = () => {
   
   // Delete a task
   const handleDeleteTask = (taskId) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
+    dispatch(deleteTask(taskId));
     toast.success("Task deleted successfully!");
+    setShowDeleteConfirmation(false);
+    setTaskToDelete(null);
+  };
+  
+  // Confirm task deletion
+  const confirmDeleteTask = (taskId) => {
+    setTaskToDelete(taskId);
+    setShowDeleteConfirmation(true);
   };
   
   // Change task status quickly
   const handleStatusChange = (taskId, newStatus) => {
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === taskId 
-          ? { ...task, status: newStatus }
-          : task
-      )
+    dispatch(changeTaskStatus({
+      taskId, newStatus
+    })
     );
     toast.info(`Task marked as ${newStatus}`);
   };
@@ -354,28 +335,18 @@ const MainFeature = () => {
     toast.success("Time tracked successfully!");
   };
 
-  // Add a time entry to a task
-  const addTimeEntryToTask = (taskId, seconds, description = '', manualStartTime = null, manualEndTime = null) => {
-    const now = new Date();
-    const startTime = manualStartTime || new Date(now.getTime() - (seconds * 1000));
-    const endTime = manualEndTime || now;
-    
+  // Add a time entry from timer
+  const addTimeEntryToTask = (taskId, seconds, description, startTime = null, endTime = null) => {
     const newTimeEntry = {
       id: Date.now(),
-      startTime,
-      endTime,
+      startTime: startTime || new Date(new Date().getTime() - (seconds * 1000)),
+      endTime: endTime || new Date(),
       duration: seconds,
       description: description.trim()
     };
     
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { 
-            ...task, 
-            timeEntries: [...(task.timeEntries || []), newTimeEntry]
-          }
-        : task
-    ));
+    dispatch(addTimeEntry({ taskId, timeEntry: newTimeEntry }));
+    toast.success("Time entry added");
   };
 
   // Calculate total time spent on a task
@@ -386,10 +357,10 @@ const MainFeature = () => {
 
   // Delete a time entry
   const handleDeleteTimeEntry = (taskId, entryId) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, timeEntries: task.timeEntries.filter(entry => entry.id !== entryId) } : task
-    ));
-    toast.success("Time entry deleted");
+    dispatch(deleteTimeEntry({
+      taskId, entryId
+    }));
+    toast.success("Time entry deleted successfully");
   };
   
   // Calculate due date label and style
@@ -823,8 +794,9 @@ const MainFeature = () => {
                     
                     {/* Delete button */}
                     <button
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="rounded-md bg-red-100 p-1.5 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                      onClick={() => confirmDeleteTask(task.id)}
+                      className="rounded-md bg-red-100 p-1.5 text-red-700 hover:bg-red-200 
+                        dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                       title="Delete task"
                     >
                       <TrashIcon className="h-3.5 w-3.5" />
@@ -836,6 +808,48 @@ const MainFeature = () => {
           })
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirmation && taskToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-surface-800"
+            >
+              <h3 className="mb-4 text-lg font-medium">Confirm Deletion</h3>
+              <p className="mb-6 text-surface-600 dark:text-surface-300">
+                Are you sure you want to delete this task? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteConfirmation(false);
+                    setTaskToDelete(null);
+                  }}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteTask(taskToDelete)}
+                  className="btn bg-red-500 text-white hover:bg-red-600"
+                >
+                  Delete Task
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Manual Time Entry Form Modal */}
       <AnimatePresence>
