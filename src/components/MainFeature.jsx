@@ -28,8 +28,8 @@ const EditIcon = getIcon('edit-3');
 const TagIcon = getIcon('tag');
 
 // Initial task status options
-const STATUSES = ['Todo', 'In Progress', 'Done'];
-const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
+const STATUSES = TypeInfo.task.statuses;
+const PRIORITIES = TypeInfo.task.priorities;
 
 // Priority colors for visual representation
 const PRIORITY_COLORS = {
