@@ -629,7 +629,7 @@ const MainFeature = () => {
             >
               <option value="All Projects">All Projects</option>
               {projects.map(project => (
-                <option key={`project-filter-${project.id || ''}-${project.name || ''}-${Math.random().toString(36).substr(2, 9)}`} value={project.name}>{project.name}</option>
+                <option key={`project-filter-${Math.random().toString(36).substr(2, 9)}`} value={project.name}>{project.name}</option>
               ))}
             </select>
           </div>
